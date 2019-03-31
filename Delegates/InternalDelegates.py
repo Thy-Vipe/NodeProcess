@@ -71,7 +71,7 @@ class Delegate(Core.NObject):
         if bError:
             raise TypeError("{input} is not a function type or NObject reference, or the passed-in function name is not valid.".format(input=str(args[0])))
 
-    def fire(self, *args, **kwargs):
+    def execute(self, *args, **kwargs):
         for func in self._functions:
             func.call(*args, **kwargs)
 
@@ -117,7 +117,7 @@ class Listener(Delegate):
     def clear(self):
         del self._functions[0]
 
-    def fire(self, *args, **kwargs):
+    def execute(self, *args, **kwargs):
         if len(self._functions) != 0:
             return self._functions[0].call(*args, **kwargs)
         else:
@@ -126,7 +126,7 @@ class Listener(Delegate):
 
 class Collector(Delegate):
 
-    def fire(self, *args, **kwargs):
+    def execute(self, *args, **kwargs):
         results = []
         for func in self._functions:
             results.append(func.call(*args, **kwargs))
