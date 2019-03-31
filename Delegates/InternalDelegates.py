@@ -123,3 +123,12 @@ class Listener(Delegate):
         else:
             print(Warning("{0} was called but is not bound to any function.".format(str(self))))
 
+
+class Collector(Delegate):
+
+    def fire(self, *args, **kwargs):
+        results = []
+        for func in self._functions:
+            results.append(func.call(*args, **kwargs))
+
+        return results
