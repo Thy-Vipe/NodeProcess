@@ -48,3 +48,13 @@ class NAnchor(NObject):
         origPx = NPoint2D(InGeo.x(), InGeo.y()) * NPoint2D.fromQPoint(self._posOrig)
         endPx = NPoint2D(InGeo.width(), InGeo.height()) * NPoint2D.fromQPoint(self._posExtent)
         self._CtrObj.setGeometry(NQWrap.Rec(origPx.toQPoint(), NQWrap.Size(*endPx.toList())))
+
+    def update(self):
+        self.__updateWrappedObjectGeo(self._OwningObj.getGeometry())
+
+    def setAnchors(self, inStart, inEnd, bEndIsExtent=False):
+        self._posOrig = inStart
+        self._posExtent = inEnd - inStart if not bEndIsExtent else inEnd
+
+    def getRectangle(self):
+        return self._CtrObj.getGeometry()
