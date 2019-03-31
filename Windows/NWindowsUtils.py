@@ -6,7 +6,7 @@ from Nodes.CoreProperties import NPoint2D, NVector
 
 class NQWrap:
     """
-    Simple enum for certain utilities from QtCore.
+    Simple namespace for certain utilities from QtCore.
     """
     Rec = QtCore.QRect
     Pt = QtCore.QPoint
@@ -21,6 +21,13 @@ class NAnchor(NObject):
     Anchor that dynamically resize a widget according to its owning widget.
     """
     def __init__(self, InOwningObj, InObj, PtA=NQWrap.PtF(0.0, 0.0), PtB=NQWrap.PtF(1.0, 1.0)):
+        """
+        Initialize the anchor object.
+        :param InOwningObj: The widget owning the child to control. Must inherit from NWidget.
+        :param InObj: The child to control. Must inherit from NWidget.
+        :param PtA: The parametric QPointF() representing the x and y start position of the child inside the parent.
+        :param PtB: The parametric QPointF() representing the x and y end position of the child inside the parent.
+        """
         super(NAnchor, self).__init__("kAnchor", InObj)
 
         self._posOrig = PtA
@@ -34,7 +41,10 @@ class NAnchor(NObject):
         InOwningObj.OnGeometryChange.connect(self.__updateWrappedObjectGeo)
 
     def __updateWrappedObjectGeo(self, InGeo):
-        parentGeo = self._OwningObj.getGeometry()
-        origPx = NPoint2D(parentGeo.x(), parentGeo.y()) * NPoint2D.fromQPoint(self._posOrig)
-        endPx = NPoint2D(parentGeo.width(), parentGeo.height()) * NPoint2D.fromQPoint(self._posExtent)
+        """
+        Update the child widget geometry according to the anchor's parameters.
+        :param InGeo: The new geometry to update from. This assumes that this geo is the parent's geo.
+        """
+        origPx = NPoint2D(InGeo.x(), InGeo.y()) * NPoint2D.fromQPoint(self._posOrig)
+        endPx = NPoint2D(InGeo.width(), InGeo.height()) * NPoint2D.fromQPoint(self._posExtent)
         self._CtrObj.setGeometry(NQWrap.Rec(origPx.toQPoint(), NQWrap.Size(*endPx.toList())))
