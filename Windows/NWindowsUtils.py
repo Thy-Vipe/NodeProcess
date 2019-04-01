@@ -50,11 +50,11 @@ class NAnchor(NObject):
         self._CtrObj.setGeometry(NQWrap.Rec(origPx.toQPoint(), NQWrap.Size(*endPx.toList())))
 
     def update(self):
-        self.__updateWrappedObjectGeo(self._OwningObj.getGeometry())
+        self.__updateWrappedObjectGeo(self._OwningObj.geometry())
 
     def setAnchors(self, inStart, inEnd, bEndIsExtent=False):
         self._posOrig = inStart
         self._posExtent = inEnd - inStart if not bEndIsExtent else inEnd
 
     def getRectangle(self):
-        return self._CtrObj.getGeometry()
+        return self._CtrObj.geometry()

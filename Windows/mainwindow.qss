@@ -1,0 +1,23 @@
+QMainWindow {
+    background-color: rgb(77, 82, 90);
+    border: 1px solid black;
+}
+
+QMainWindow::separator {
+    background: blue;
+    width: 10px;
+    height: 10px; 
+}
+
+QWidget {
+    background-color: rgb(77, 82, 90);
+}
+
+QLabel {
+    font: 10pt \MS Shell Dlg 2\;
+    color: #fff;
+}
+
+QMenuBar {
+    color: #fff;
+}
