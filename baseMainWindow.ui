@@ -6,12 +6,47 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>949</width>
-    <height>720</height>
+    <width>1118</width>
+    <height>676</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+	background-color: rgb(77, 82, 90);
+	border: 1px solid black;
+}
+QMainWindow::separator {
+    background: blue;
+    width: 10px;
+    height: 10px; 
+}
+QWidget {
+	background-color: rgb(77, 82, 90);
+}
+QLabel {
+	font: 10pt &quot;MS Shell Dlg 2&quot;;
+	color: #fff;
+}
+QMenuBar {
+	color: #fff
+}
+
+</string>
+  </property>
+  <property name="documentMode">
+   <bool>false</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>false</bool>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="widget" native="true">
@@ -20,7 +55,7 @@
       <x>0</x>
       <y>0</y>
       <width>271</width>
-      <height>571</height>
+      <height>641</height>
      </rect>
     </property>
     <widget class="QWidget" name="verticalLayoutWidget">
@@ -29,7 +64,7 @@
        <x>0</x>
        <y>0</y>
        <width>271</width>
-       <height>561</height>
+       <height>631</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -60,7 +95,7 @@
          <bool>false</bool>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color:rgb(207, 208, 221)</string>
+         <string notr="true">background-color:rgb(46, 49, 54)</string>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -68,6 +103,46 @@
         <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
+        <widget class="QWidget" name="horizontalLayoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>271</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="OutlinerTopLayt">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetDefaultConstraint</enum>
+          </property>
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="text">
+             <string>Outliner</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
       <item>
@@ -79,28 +154,49 @@
    <widget class="QGraphicsView" name="graphicsView">
     <property name="geometry">
      <rect>
-      <x>360</x>
-      <y>50</y>
-      <width>256</width>
-      <height>192</height>
+      <x>270</x>
+      <y>0</y>
+      <width>841</width>
+      <height>631</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(46, 49, 54, 255), stop:1 rgb(73, 78, 86));</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
    </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>949</width>
+     <width>1118</width>
      <height>21</height>
     </rect>
    </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
+   <widget class="QMenu" name="menuFIle">
+    <property name="title">
+     <string>File</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+   </widget>
+   <addaction name="menuFIle"/>
+   <addaction name="menuTools"/>
   </widget>
  </widget>
  <resources/>

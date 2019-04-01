@@ -5,13 +5,12 @@ import sys, os
 if __name__ == "__main__":
     lp = __file__.rsplit("/", 2)[0]; sys.path.extend([lp, lp.replace("/", "\\")]); del lp
 
-from Nodes.Core import NObject
-from Windows.CoreNWindows import NWidget
+from Windows import CoreNWindows
 
 
-class NMainWindow(NWidget, QtWidgets.QMainWindow):
+class NMainWindow(CoreNWindows.NWidget, QtWidgets.QMainWindow):
     def __init__(self, owningObject, windowParent=None):
-        NWidget.__init__(self, "MAIN_WINDOW", owningObject)
+        CoreNWindows.NWidget.__init__(self, owningObject, "MAIN_WINDOW")
         QtWidgets.QMainWindow.__init__(self, windowParent)
 
         self._windowGraph = None

@@ -1,6 +1,6 @@
 from PySide2 import QtCore
 from Nodes.Core import NObject
-from Windows.CoreNWindows import NWidget
+from Windows.CoreNWindows import *
 from Nodes.CoreProperties import NPoint2D, NVector
 
 
