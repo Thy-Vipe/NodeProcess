@@ -6,6 +6,27 @@ from numbers import Real
 
 from PySide2.QtCore import QPoint, QPointF
 
+
+
+# Define various macros...
+EXPOSEDPROPNAME = "propTypes"
+
+
+class EPropType:
+    PT_Input = 0
+    PT_Output = 1
+    PT_FuncDelegateIn = 2
+    PT_FuncDelegateOut = 3
+    PT_Readable = 4
+
+
+class EFuncType:
+    # Used for heavy operations that require a certain amount of processing.
+    FT_Callable = 0
+    # Used if the logic behind the function object is simple / quick to execute
+    FT_Pure = 1
+
+
 class NArchive(object):
     def __init__(self):
         super(NArchive, self).__init__(self)

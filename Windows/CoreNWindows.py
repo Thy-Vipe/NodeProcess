@@ -5,8 +5,9 @@ import sys, os
 if __name__ == "__main__":
     lp = __file__.rsplit("/", 2)[0]; sys.path.extend([lp, lp.replace("/", "\\")]); del lp
 
-from Nodes.Core import NObject
+from Nodes.CoreObject import NObject
 from Nodes.CoreUtils import UCoreUtils
+from Nodes.CoreProperties import *
 from Windows import NWindowsUtils
 
 
@@ -725,6 +726,41 @@ class NConnection(NWidget, QtWidgets.QGraphicsPathItem):
         self.setPath(path)
 
 
-class NUiNodeObj(QtWidgets.QGraphicsItem):
-    def __init__(self):
-        super(self, QtWidgets.QGraphicsItem).__init__()
+class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
+    def __init__(self, baseNode=None, parent=None):
+        NWidget.__init__(self, None, baseNode.getName() if baseNode else "UNDEFINED")
+        QtWidgets.QGraphicsItem.__init__(self, parent)
+
+        self._wrappedNode = None
+        self._exposedAttributes = {}
+
+        if baseNode:
+            self._wrappedNode = baseNode
+            self._initializeAttrs()
+
+
+    def _initializeAttrs(self):
+        for prop in dir(self._wrappedNode):
+            item = getattr(self._wrappedNode, prop)
+            if callable(item):
+                attr = getattr(item, EXPOSEDPROPNAME, None)
+                if attr and EPropType.PT_Readable in attr:
+                    self._exposedAttributes[prop] = NAttribute(attr.__name__, "", self)
+
+
+class NAttribute(NWidget, QtWidgets.QWidget):
+    def __init__(self, name, niceName="", parent=None):
+        """
+        Initialize a UI attribute. They represent an actual attribute on the node / function.
+        :param name: The attribute name.
+        :type name: String.
+        :param niceName: The attribute display name if wanted.
+        :type niceName: String.
+        :param parent: A reference to a parent widget.
+        :type parent: Subclass of QWidget reference.
+        """
+        NWidget.__init__(self, parent, name)
+        QtWidgets.QWidget.__init__(self, parent)
+
+        self._displayName = niceName if niceName != "" else name
+

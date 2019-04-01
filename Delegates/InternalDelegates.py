@@ -1,4 +1,5 @@
-from Nodes import Core, CoreUtils
+from Nodes.CoreObject import NObject
+from Nodes import CoreUtils
 
 
 class BoundMethod:
@@ -21,7 +22,7 @@ class BoundMethod:
         return self.__Owner
 
 
-class Delegate(Core.NObject):
+class Delegate(NObject):
     """
     This class allows to dynamically link NObject's functions together.
     It keeps track of the objects the functions are attached to, allowing a fairly simple access of relatives.
@@ -42,7 +43,7 @@ class Delegate(Core.NObject):
             owningClass = CoreUtils.UCoreUtils.get_class_that_defined_method(args[0])
             name = args[0].__name__
             self._functions.append(BoundMethod(self.getOwner(), owningClass, name, args[0]))
-        elif isinstance(args[0], Core.NObject):
+        elif isinstance(args[0], NObject):
             funcRef = getattr(args[0], args[1], None)
 
             if funcRef is not None and callable(funcRef):
@@ -100,11 +101,13 @@ class Delegate(Core.NObject):
         return None
 
 
-class Listener(Delegate):
-    
+class DelegateSingle(Delegate):
+    def __init__(self, name, Owner=None):
+        super(DelegateSingle, self).__init__(name, Owner)
+
     def bindFunction(self, *args):
         if len(self._functions) == 0:
-            super(Listener, self).bindFunction(*args)
+            super(DelegateSingle, self).bindFunction(*args)
         else:
             raise Warning("{0} is already bound to a method.".format(str(self)))
 
@@ -117,15 +120,28 @@ class Listener(Delegate):
     def clear(self):
         del self._functions[0]
 
+
+class DelegateMulticast(Delegate):
+    def __init__(self, name, Owner=None):
+        super(DelegateMulticast, self).__init__(name, Owner)
+
+
+class Listener(DelegateSingle):
+
     def execute(self, *args, **kwargs):
+        """
+        /!\\ Not used by this class.
+        """
+        pass
+
+    def call(self, *args, **kwargs):
         if len(self._functions) != 0:
             return self._functions[0].call(*args, **kwargs)
         else:
-            print(Warning("{0} was called but is not bound to any function.".format(str(self))))
+            print(Warning("{0} was called but is not bound to any function.".format(self.getName())))
 
 
 class Collector(Delegate):
-
     def execute(self, *args, **kwargs):
         results = []
         for func in self._functions:
