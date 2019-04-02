@@ -3,6 +3,7 @@ from __future__ import division
 from functools import reduce
 import math
 from numbers import Real
+import array, struct
 
 from PySide2.QtCore import QPoint, QPointF
 
@@ -30,10 +31,16 @@ class EFuncType:
 class NArchive(object):
     def __init__(self):
         super(NArchive, self).__init__(self)
-        self.__dataBinary = []
+        self.dataBinary = struct.Struct('I 2s f')
+        self.byteBuffers = []
+        self.position = 0
 
-    def addData(self, binary):
-        pass
+    def __lshift__(self, other):
+        if hasattr(other, "__archive__"):
+            other.__archive__(self)
+
+    def __add__(self, buffer):
+        self.byteBuffers.append(buffer)
 
 
 class NString(str):
@@ -43,12 +50,18 @@ class NString(str):
     def __new__(cls, content):
         return str.__new__(cls, content)
 
-    def __lshift__(self, other):
-        if isinstance(other, NArchive):
-            other.addData(self.encode())
+    def __archive__(self, Ar):
+        """
+        Serialize NString into a byte buffer.
+        :param Ar: The input archive to serialize into / deserialize from. Modifies the input directly.
+        :type Ar: NArchive.
+        """
+        encoding = '%ds' % len(self)
+        s = struct.Struct(encoding)
+        buffer = s.pack(self.encode())
+        Ar += (encoding, buffer)
 
-    def __rshift__(self, other):
-        raise ArithmeticError("Wrong operand order for serialization.")
+
 
     @staticmethod
     def fromString(inString):
@@ -68,6 +81,15 @@ class NPoint2D(object):
         self.x = x
         self.y = y
         self.__IsInt = bForceInt
+
+    def __archive__(self, Ar):
+        """
+        Serialize NPoint2D into a byte buffer.
+        :param Ar: The input archive to serialize into / deserialize from. Modifies the input directly.
+        :type Ar: NArchive.
+        """
+        s = struct.Struct('2f')
+        Ar += ('2d?', s.pack(self.x, self.y, self.__IsInt))
 
     def __repr__(self):
         return "{0}({1}, {2})".format(
@@ -137,6 +159,10 @@ class NPoint(object):
         self.x = x
         self.y = y
         self.z = z
+
+    def __archive__(self, Ar):
+        s = struct.Struct('3d')
+        Ar += ('3d', s.pack(self.x, self.y, self.z))
 
     def __repr__(self):
         return '{0}({1}, {2}, {3})'.format(
