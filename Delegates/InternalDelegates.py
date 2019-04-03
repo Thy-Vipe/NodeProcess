@@ -3,8 +3,9 @@ from Nodes import CoreUtils
 from Nodes.Decorators import *
 
 
-class BoundMethod:
-    def __init__(self, owner, o, fname, fRef):
+class BoundMethod(object):
+    def __init__(self, owning_del=None, owner=None, o=None, fname='', fRef=None):
+        self.__owningDelegate = owning_del
         self.__Owner = owner
         self.__ObjectRef = o
         self.__FuncRef = fRef
@@ -23,11 +24,12 @@ class BoundMethod:
         return self.__Owner
 
     def __archive__(self, Ar):
-        Ar << self.__Owner.getUUID() if self.__Owner else NString("None")
-        Ar << self.__ObjectRef.getUUID()
+        Ar << (self.__Owner.getUUID() if self.__Owner else NString("None"))
+        Ar << (self.__ObjectRef.getUUID() if self.__ObjectRef else NString("None"))
         Ar << NString(self.__FuncName)
 
     def __reader__(self, data):
+        print(data)
         # @TODO Implement __reader__ for BoundMethod.
         pass
 
@@ -53,12 +55,12 @@ class Delegate(NObject):
         if callable(args[0]):
             owningClass = CoreUtils.UCoreUtils.get_class_that_defined_method(args[0])
             name = args[0].__name__
-            self._functions.append(BoundMethod(self.getOwner(), owningClass, name, args[0]))
+            self._functions.append(BoundMethod(self, self.getOwner(), owningClass, name, args[0]))
         elif isinstance(args[0], NObject):
             funcRef = getattr(args[0], args[1], None)
 
             if funcRef is not None and callable(funcRef):
-                self._functions.append(BoundMethod(self.getOwner(), args[0], args[1], funcRef))
+                self._functions.append(BoundMethod(self, self.getOwner(), args[0], args[1], funcRef))
             else:
                 bError = True
         else:
@@ -114,7 +116,7 @@ class Delegate(NObject):
 
 
 class DelegateSingle(Delegate):
-    def __init__(self, name, Owner=None):
+    def __init__(self, name="", Owner=None):
         super(DelegateSingle, self).__init__(name, Owner)
 
     def bindFunction(self, *args):
@@ -160,3 +162,38 @@ class Collector(Delegate):
             results.append(func.call(*args, **kwargs))
 
         return results
+
+# def test_function():
+#     print("hi")
+#
+# Ar = NArchive()
+# l = [NObject(None, "a"), NObject(None, "b"), NObject(None, "c")]
+# d = Delegate('testdelegate')
+# d.bindFunction(test_function)
+#
+# Ar << l[0]
+#
+# Ar = Ar.combine()
+
+Ar = NArchive()
+
+Ar << NObject(None, "my object")
+
+other = NObject()
+
+print(Ar.getData())
+mm = NMemoryReader(Ar.getData())
+mm << other
+
+print(other.getName())
+# Ar.writeToFile(open("C:\\Users\\leoco\\Desktop\\file.narchive", "wb"), "object")
+#
+# newl = [NObject(None), NObject(None), NObject(None)]
+# newd = Delegate("")
+# with open("C:\\Users\\leoco\\Desktop\\file.narchive", "rb") as ow:
+#     data = NArchive.decodeFile(ow)
+#     m = NMemoryReader(data["object"])
+#     m << newl
+#     m << newd
+#
+# newl[0].getName()
