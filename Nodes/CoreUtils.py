@@ -3,7 +3,6 @@ import inspect
 from PySide2 import QtCore
 
 
-
 class UCoreUtils:
 
     @staticmethod

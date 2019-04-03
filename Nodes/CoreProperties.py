@@ -6,27 +6,14 @@ from numbers import Real
 import array, struct, collections
 
 from PySide2.QtCore import QPoint, QPointF
+import global_accessor as GA
+from Nodes.Decorators import *
 
+def getClass(classNameStr, glob):
+    return glob[classNameStr]
 
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
-
-
-class EAttrType:
-    AT_Serializable = 0
-    AT_ReadOnly = 1
-    AT_ReadWrite = 2
-    AT_MulticastDelegate = 3
-    AT_SingleCastDelegate = 4
-    AT_Getter = 5
-
-
-class EPropType:
-    PT_Input = 0
-    PT_Output = 1
-    PT_FuncDelegateIn = 2
-    PT_FuncDelegateOut = 3
-    PT_Readable = 4
 
 
 class EFuncType:
@@ -52,18 +39,11 @@ class NArchive(object):
         self.position = 0
 
     def __lshift__(self, other):
-        if isinstance(other, int):
-            self.__add__(('i', struct.pack('i', other)))
-
-        elif isinstance(other, float):
-            self.__add__(('d', struct.pack('d', other)))
+        if hasattr(other, "__archive__"):
+            other.__archive__(self)
 
         else:
-            if hasattr(other, "__archive__"):
-                other.__archive__(self)
-
-            else:
-                raise TypeError("%s does not implement __archive__()." % other.__class__.__name__)
+            raise TypeError("%s does not implement __archive__()." % other.__class__.__name__)
 
     def __add__(self, buffer):
         if isinstance(buffer, tuple) and len(buffer) == 2:
@@ -76,16 +56,20 @@ class NArchive(object):
         else:
             raise TypeError("Invalid input: buffer must be a tuple holding the buffer and the binary data.")
 
-    def combine(self):
+    def combine(self, recursiveVal=None):
         """
-        Combine the entire archive into a single binary.
+        Combine the entire archive into a single binary. This is a rather slow operation as it deserialize, converts and re-serializes the data.
         :return: the new archive with a combined buffer.
         """
         dataTMp = []
-        for buffer, data in self._byteBuffers:
+        for buffer, data in self._byteBuffers if not recursiveVal else recursiveVal:
             data = struct.unpack(buffer, data)
             if len(data) == 1:
-                data = data[0].decode()
+                if hasattr(data[0], 'decode'):
+                    data = data[0].decode()
+                else:
+                    data = data[0]
+
             tmp = (buffer, data)
             dataTMp.append(tmp)
 
@@ -93,12 +77,18 @@ class NArchive(object):
         combinedValues = []
         for buff, value in dataTMp:
             combinedBuffer += buff
-            if value is tuple:
+            if isinstance(value, tuple):
                 combinedValues.extend(list(value))
-            else:
+            elif hasattr(value, 'encode'):
                 combinedValues.append(value.encode())
+            else:
+                combinedValues.append(value)
 
+        # print(combinedBuffer, combinedValues)
         outData = (combinedBuffer, struct.pack(combinedBuffer, *combinedValues))
+        outData = [outData]
+
+        # print(outData)
 
         return NArchive(outData)
 
@@ -122,7 +112,7 @@ class NArchive(object):
     @staticmethod
     def ensure(inList, classType, position=1):
         for item in inList:
-            if isinstance(item, (tuple, list)) and classType is not tuple:
+            if isinstance(item, tuple) and classType is not tuple:
                 item = item[position]
 
             if not isinstance(item, classType):
@@ -241,7 +231,7 @@ class NMemoryReader(NArchive):
             if NMemoryReader.ensure(inBuffer, array.array):
                 self._byteBuffers = inBuffer
                 bUseBytes = True
-            elif NMemoryReader.ensure(inBuffer, (tuple, list)):
+            elif NMemoryReader.ensure(inBuffer, tuple):
                 self._byteBuffers = inBuffer
             else:
                 raise RuntimeError("%s is not properly initialized. Input buffer is invalid." % self.__class__.__name__)
@@ -273,7 +263,7 @@ class NMemoryReader(NArchive):
             if not end:
                 raise RuntimeError("__binaryreader__ in %s must return the end position of its read sequence." % item.__class__.__name__)
             # mark end of data.
-            self.position = end
+            self.position += end
 
         else:
             raise TypeError("%s does not implement __reader__(data) or __binaryreader__(data)." % item.__class__.__name__)
@@ -326,27 +316,68 @@ class NFloat(NMutable):
 
 
 class NArray(collections.UserList):
+    """
+    NArray is a serializable array, that is mutable and behaves exactly like a list.
+    Upon deserialization, NArray re-spawns the objects that were contained in it, and recovers the states they were in, according to their __reader__(data)
+    """
     def __init__(self, objectType):
         super(NArray, self).__init__(self)
-        self._type = objectType
+        self._typ = objectType
 
     def append(self, item):
-        if isinstance(item, self._type):
+        if isinstance(item, self._typ):
             super(NArray, self).append(item)
+        else:
+            raise TypeError("Input isn't valid. type is %s, input is %s" % (item.__class__.__name__, self._typ.__name__))
 
     def extend(self, arr):
-        if any(map(lambda x: not isinstance(x, self._type), arr)):
-            raise RuntimeError("Input isn't a single-typed list.")
+        if any(map(lambda x: not isinstance(x, self._typ), arr)):
+            raise TypeError("Input isn't a single-typed list. type is %s, input is %s" % (arr.__class__.__name__, self._typ.__name__))
         else:
             super(NArray, self).extend(arr)
 
     def __archive__(self, Ar):
-        pass
-        # @TODO finish __archive__() for NArray.
+        OwnAr = NArchive()
+        OwnAr << NString('array_begin')  # write header for array
+        OwnAr << NInt(len(self))
+        OwnAr << NString(self._typ.__name__)
+
+        for item in self:
+            OwnAr << item
+
+        OwnAr << NString('array_end')
+
+        Ar += OwnAr.combine()
 
     def __binaryreader__(self, data):
-        pass
-        # @TODO Finish reader for NArray().
+        # isinstance(data[0], int) would be true if this array is nested into an other node. If it is standalone it will not require such.
+        print('array:',data[0], len(data[0]) if not isinstance(data[0], int) else '')
+        if (len(data) == 2 and not isinstance(data[0], int)) or (len(data) == 1 and len(data[0]) == 2 and not isinstance(data[0], int)):
+            values = struct.unpack_from(data[0][0], data[0][1], 0)[1:-1]
+            values = list(map(lambda x: x.decode() if hasattr(x, 'decode') else x, values))
+
+        else:
+            values = list(map(lambda x: x.decode() if hasattr(x, 'decode') else x, data))
+
+        count, typ = values[0], values[1]
+        print(count, typ)
+        self._typ = GA.findClass(typ)
+        data = values[2::]
+        arr_count = len(data) // count
+        if self._typ:
+            for idx in range(count):
+                new = self._typ()
+                if hasattr(new, '__reader__'):
+                    new.__reader__(data[idx*arr_count:idx*arr_count+arr_count])
+
+                elif hasattr(new, '__binaryreader__'):
+                    # @TODO Add support for binary deserialization of nested objects from NArray.
+                    warnings.warn("Binary deserialization of nested items in NArray are not yet supported.", RuntimeWarning)
+
+                print(new)
+                self.append(new)
+
+        return 1
 
 
 class NString(collections.UserString):
@@ -355,11 +386,15 @@ class NString(collections.UserString):
     We're using a wrapper for str here, because str isn't easy to work with.
     The main difference is that NString is MUTABLE.
     """
+    def __init__(self, seq=''):
+        super(NString, self).__init__(seq)
+
+        CLASS_PROP_BODY(self)
 
     def __archive__(self, Ar):
         """
         Serialize NString into a byte buffer.
-        :param Ar: The input archive to serialize into / deserialize from. Modifies the input directly.
+        :param Ar: The input archive to serialize into. Modifies the input directly.
         :type Ar: NArchive.
         """
         encoding = '%ds' % len(self)
@@ -368,7 +403,15 @@ class NString(collections.UserString):
         Ar += (encoding, buffer)
 
     def __reader__(self, data):
-        self.data = data[0].decode()
+        """
+        Deserialize NString from bytes / get from value.
+        :param data: the data to read from.
+        :type data: tuple from unpacked struct or str.
+        """
+        if isinstance(data, (tuple, list)):
+            self.data = data[0].decode() if not isinstance(data[0], str) else data[0]
+        else:
+            self.data = data
 
     @staticmethod
     def toString(inObject):
@@ -378,6 +421,9 @@ class NString(collections.UserString):
         :return: The new NString.
         """
         return NString(str(inObject))
+
+    def copy(self):
+        return NString(self)
 
 
 class NPoint2D(object):
@@ -709,6 +755,3 @@ class NVector(NPoint):
             z  # Z
         )
 
-
-def getClass(classNameStr):
-    return globals()[classNameStr]

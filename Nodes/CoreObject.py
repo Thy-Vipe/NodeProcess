@@ -1,6 +1,7 @@
-import uuid, json
+import uuid, json, warnings
 from Nodes.Decorators import *
 from Nodes.CoreProperties import *
+import global_accessor as GA
 
 class NObject(object):
     """
@@ -9,6 +10,7 @@ class NObject(object):
         Every NObject has a 64-bit UUID that is used to have every object be "unique".
     """
     def __init__(self, world=None, name="", inOwner=None):
+
         CLASS_BODY(self)
 
         NATTR(self, '_uuid', EAttrType.AT_Serializable)
@@ -16,20 +18,24 @@ class NObject(object):
 
         NATTR(self, '_name', EAttrType.AT_Serializable)
         self._name = NString(name)
+
+        NATTR(self, '_owner', EAttrType.AT_Serializable)
         self._owner = inOwner
         self._world = world if (world and world.__class__.__name__ == 'NWorld') else None
 
         if self.getWorld():
             self._world.registerObjectWithWorld(self)
 
+        CLASS_REGISTER(self)
+
     def getUUID(self):
-        return self._uuid
+        return self._uuid.copy()
 
     def setUUID(self, inUUID):
         self._uuid = inUUID
 
     def getName(self):
-        return self._name
+        return self._name.copy()
 
     def setName(self, inName):
         self._name = inName
@@ -47,22 +53,22 @@ class NObject(object):
     def __archive__(self, Ar):
         """
         Automatically serializes any property that is marked as serializable using EAttrType.AT_Serializable when declaring the attribute.
-        Any property marked as serializable must hold an object that overrides the '__archive__(Ar&)' method, or the property will be ignored.
+        Any property marked as serializable must hold an object that overrides the '__archive__(Ar&)' method, or TypeError will be thrown.
         :param Ar: The archive to use for serialization.
         :type Ar: NArchive.
         """
         OwnAr = NArchive()
         for prop in dir(self):
-            if EAttrType.AT_Serializable in self.__PropFlags__.get(prop, ()):
+            __propFlags = self.__PropFlags__.get(prop, ())
+            if EAttrType.AT_Serializable in __propFlags:
                 propInst = getattr(self, prop)
-                try:
-                    # Do not recursively serialize NObjects. Only properties. Get UUID for objects.
-                    if isinstance(propInst, NObject):
+                if propInst:
+                    # Do not recursively serialize NObjects. Only properties.
+                    # Get UUID for objects unless they're declared as transient, in which case serialize.
+                    if isinstance(propInst, NObject) and EAttrType.AT_Transient not in __propFlags:
                         OwnAr << propInst.getUUID()
                     else:
                         OwnAr << propInst
-                except TypeError:
-                    print(Warning("%s.%s is not serializable." % (propInst.__class__.__name__, prop)))
 
         Ar += OwnAr.combine()
 
@@ -73,18 +79,45 @@ class NObject(object):
         :type data: iterable.
         :return: the new Archive position after computation.
         """
+        prevUUID = self._uuid.copy()
         idx = 0
-        num = len(data)
+        # print(data)
+        values = struct.unpack_from(data[0][0], data[0][1], 0)
+        # print(values)
+        num = len(values); print(num)
+        PendingArrays = []
         for prop in dir(self):
             if idx < num:
-                if EAttrType.AT_Serializable in self.__PropFlags__.get(prop, ()):
+                __propFlags = self.__PropFlags__.get(prop, ())
+                if EAttrType.AT_Serializable in __propFlags:
                     obj = getattr(self, prop)
-                    dt = struct.unpack_from(data[idx][0], data[idx][1], 0)
-                    obj.__reader__(dt)
+                    val = values[idx] if not hasattr(values[idx], 'decode') else values[idx].decode()
+                    if hasattr(obj, '__reader__'):
+                        # print(prop, val)
+                        obj.__reader__(val)
+                        idx += 1
+                    elif hasattr(obj, '__binaryreader__'):
+                        if val == 'array_begin':
+                            endArray = values.index('array_end'.encode()); assert endArray != -1  # should never be false
+                            dt = values[idx+1:endArray]
+                            PendingArrays.append([idx, endArray, dt, obj])
 
-                    idx += 1
+                            # Make sure to offset the read index, as the order is sensitive.
+                            # Objects MUST be deserialized in the exact order they were serialized.
+                            idx += endArray+1
 
-        return idx
+                        else:
+                            obj.__binaryreader__(val)
+                            idx += 1
+
+        GA.swapInstanceKey(prevUUID)
+
+        # Arrays must be regenerated at the end of the properties parsing, because they regenerate the items that were saved into them automatically, which
+        # requires the appropriate NObject._uuid to respawn connections, for instance.
+        for arr in PendingArrays:
+            arr[3].__binaryreader__(arr[2])
+
+        return 1
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name)
+        return "%s with ID %s" % (self.__class__.__name__, self.getUUID())

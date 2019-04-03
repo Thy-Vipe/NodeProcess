@@ -65,7 +65,7 @@ class NDynamicAttr(NObject):
 
         # Becomes true whenever the input of this attribute is connected.
         self._hasPlug = False
-        self._plugDelegate = Listener("%s_ValueQueryListener" % self.getName(), self)
+        self._plugDelegate = CollectorSingle("%s_ValueQueryListener" % self.getName(), self)
 
     def set(self, value, bMute=False):
         self._value = value
@@ -122,12 +122,4 @@ class NFunctionBase(NObject):
             self._thenDelegate.bindFunction(obj, funcname)
         elif not bHasExposedProp:
             self._thenDelegate.bindFunction(obj, funcname)
-
-
-
-
-
-
-
-
 
