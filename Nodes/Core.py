@@ -6,17 +6,18 @@ from Nodes.CoreProperties import *
 from Nodes.CoreObject import *
 
 
-class NMain(NObject):
+class NWorld(NObject):
     """
         This is the main object that is ultimately the base of every logic going on in this software.
         It runs independently from the Ui parts of the code, and handles the logical side of it.
     """
     def __init__(self):
-        super(NMain, self).__init__("Main")
+        super(NWorld, self).__init__("Main")
         self.CPU_COUNT = multiprocessing.cpu_count()
         # Can be defined when the window is spawned.
         self._WindowReference = None
         self._graphReference = None
+        self._registered_objects = {}
 
     def getInterfaceRef(self):
         """
@@ -45,6 +46,11 @@ class NMain(NObject):
         """
         pass
 
+    def registerObjectWithWorld(self, obj):
+        if isinstance(obj, NObject):
+            self._registered_objects[obj.getUUID()] = obj
+        else:
+            raise TypeError("%s is not of type NObject." % obj.__class__.__name__)
 
 class NDynamicAttr(NObject):
     """

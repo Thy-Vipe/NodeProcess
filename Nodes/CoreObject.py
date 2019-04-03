@@ -8,7 +8,7 @@ class NObject(object):
         for every other NObject subclass. It is made of overridable functions that are expected to be used everywhere in many different instances.
         Every NObject has a 64-bit UUID that is used to have every object be "unique".
     """
-    def __init__(self, name="", inOwner=None):
+    def __init__(self, world=None, name="", inOwner=None):
         CLASS_BODY(self)
 
         NATTR(self, '_uuid', EAttrType.AT_Serializable)
@@ -17,6 +17,10 @@ class NObject(object):
         NATTR(self, '_name', EAttrType.AT_Serializable)
         self._name = NString(name)
         self._owner = inOwner
+        self._world = world if (world and world.__class__.__name__ == 'NWorld') else None
+
+        if self.getWorld():
+            self._world.registerObjectWithWorld(self)
 
     def getUUID(self):
         return self._uuid
@@ -37,6 +41,9 @@ class NObject(object):
         """
         return self._owner
 
+    def getWorld(self):
+        return self._world
+
     def __archive__(self, Ar):
         """
         Automatically serializes any property that is marked as serializable using EAttrType.AT_Serializable when declaring the attribute.
@@ -44,17 +51,20 @@ class NObject(object):
         :param Ar: The archive to use for serialization.
         :type Ar: NArchive.
         """
+        OwnAr = NArchive()
         for prop in dir(self):
             if EAttrType.AT_Serializable in self.__PropFlags__.get(prop, ()):
                 propInst = getattr(self, prop)
                 try:
                     # Do not recursively serialize NObjects. Only properties. Get UUID for objects.
                     if isinstance(propInst, NObject):
-                        Ar << propInst.getUUID()
+                        OwnAr << propInst.getUUID()
                     else:
-                        Ar << propInst
+                        OwnAr << propInst
                 except TypeError:
                     print(Warning("%s.%s is not serializable." % (propInst.__class__.__name__, prop)))
+
+        Ar += OwnAr.combine()
 
     def __binaryreader__(self, data):
         """
@@ -78,6 +88,3 @@ class NObject(object):
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name)
-
-
-

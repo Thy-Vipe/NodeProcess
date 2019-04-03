@@ -46,29 +46,66 @@ class NArchive(object):
     Use NMemoryReader in order to read from byte arrays or byte sequences. NArchive serializes data into byte sequences that can then be converted into
     byte arrays using NArchive.toByteArrays().
     """
-    def __init__(self):
+    def __init__(self, inAr=None):
         super(NArchive, self).__init__()
-        self._byteBuffers = []
+        self._byteBuffers = [] if inAr is None else inAr
         self.position = 0
 
     def __lshift__(self, other):
-        if hasattr(other, "__archive__"):
-            other.__archive__(self)
+        if isinstance(other, int):
+            self.__add__(('i', struct.pack('i', other)))
+
+        elif isinstance(other, float):
+            self.__add__(('d', struct.pack('d', other)))
 
         else:
-            raise TypeError("%s does not implement __archive__()." % other.__class__.__name__)
+            if hasattr(other, "__archive__"):
+                other.__archive__(self)
+
+            else:
+                raise TypeError("%s does not implement __archive__()." % other.__class__.__name__)
 
     def __add__(self, buffer):
         if isinstance(buffer, tuple) and len(buffer) == 2:
             self._byteBuffers.append(buffer)
             self.position += 1
+
+        elif isinstance(buffer, NArchive):
+            self._byteBuffers.extend(buffer.getData())
+            self.position += 1
         else:
             raise TypeError("Invalid input: buffer must be a tuple holding the buffer and the binary data.")
 
-    def toByteArrays(self):
+    def combine(self):
+        """
+        Combine the entire archive into a single binary.
+        :return: the new archive with a combined buffer.
+        """
+        dataTMp = []
+        for buffer, data in self._byteBuffers:
+            data = struct.unpack(buffer, data)
+            if len(data) == 1:
+                data = data[0].decode()
+            tmp = (buffer, data)
+            dataTMp.append(tmp)
+
+        combinedBuffer = ''
+        combinedValues = []
+        for buff, value in dataTMp:
+            combinedBuffer += buff
+            if value is tuple:
+                combinedValues.extend(list(value))
+            else:
+                combinedValues.append(value.encode())
+
+        outData = (combinedBuffer, struct.pack(combinedBuffer, *combinedValues))
+
+        return NArchive(outData)
+
+    def toByteArrays(self, bFromStart=False):
         if not NArchive.ensure(self._byteBuffers, array.array):
             res = []
-            for item in self._byteBuffers:
+            for item in self._byteBuffers[self.position if not bFromStart else 0::]:
                 s = struct.Struct(item[0])
                 ar = array.array('I', [0] * s.size)
                 data = s.unpack(item[1])
@@ -85,7 +122,7 @@ class NArchive(object):
     @staticmethod
     def ensure(inList, classType, position=1):
         for item in inList:
-            if isinstance(item, tuple) and classType is not tuple:
+            if isinstance(item, (tuple, list)) and classType is not tuple:
                 item = item[position]
 
             if not isinstance(item, classType):
@@ -105,7 +142,7 @@ class NArchive(object):
         # Write all the data contained in our buffer
         byteInfo = []
         int_size = NArchive.intSize()
-        start_position = binary_file.seek(0, 1); print("pos", start_position)
+        start_position = binary_file.seek(0, 1)
         # preallocate int_size bits to write the chunk size at the end.
         count = binary_file.write(b'0'.zfill(int_size))
         for buffer, data in self.getData():
@@ -204,7 +241,7 @@ class NMemoryReader(NArchive):
             if NMemoryReader.ensure(inBuffer, array.array):
                 self._byteBuffers = inBuffer
                 bUseBytes = True
-            elif NMemoryReader.ensure(inBuffer, tuple):
+            elif NMemoryReader.ensure(inBuffer, (tuple, list)):
                 self._byteBuffers = inBuffer
             else:
                 raise RuntimeError("%s is not properly initialized. Input buffer is invalid." % self.__class__.__name__)
@@ -213,32 +250,33 @@ class NMemoryReader(NArchive):
 
 
     def __lshift__(self, other):
-        if hasattr(other, "__reader__"):
+        self._deserialize(other)
+
+    def _deserialize(self, item):
+        if hasattr(item, "__reader__"):
             # If memory is bytes buffer
             if self.__memoryType == 1:
                 data = self._byteBuffers[self.position]
                 unpackedBin = struct.unpack_from(data[0], data[1], 0)
-                other.__reader__(unpackedBin)
+                item.__reader__(unpackedBin)
 
             # If memory is bytes sequence
             elif self.__memoryType == 0:
                 data = self._byteBuffers[self.position]
                 unpackedBin = struct.unpack(data[0], data[1])
-                other.__reader__(unpackedBin)
+                item.__reader__(unpackedBin)
 
             self.position += 1
 
-        elif hasattr(other, '__binaryreader__'):
-            end = other.__binaryreader__(self.toByteArrays())
+        elif hasattr(item, '__binaryreader__'):
+            end = item.__binaryreader__(self.toByteArrays())
             if not end:
-                raise RuntimeError("__binaryreader__ in %s must return the end position of its read sequence." % other.__class__.__name__)
+                raise RuntimeError("__binaryreader__ in %s must return the end position of its read sequence." % item.__class__.__name__)
             # mark end of data.
             self.position = end
 
         else:
-            raise TypeError("%s does not implement __reader__(data) or __binaryreader__(data)." % other.__class__.__name__)
-
-
+            raise TypeError("%s does not implement __reader__(data) or __binaryreader__(data)." % item.__class__.__name__)
 
     def seek(self, pos):
         if pos < len(self._byteBuffers):
@@ -246,6 +284,69 @@ class NMemoryReader(NArchive):
         else:
             raise IndexError("Ensure condition failed: position < len(byteBuffer) != True")
 
+
+class NMutable(object):
+    """
+    A simple mutable object holding wildcard data. Is serializable if buffer is defined.
+    """
+    def __init__(self, v, buffer=''):
+        self._data = v
+        self._buffer = buffer
+
+    def get(self):
+        return self._data
+
+    def set(self, v):
+        self._data = v
+
+    def __archive__(self, Ar):
+        if self._buffer != '':
+            Ar += (self._buffer, struct.pack(self._buffer, self._data))
+        else:
+            raise RuntimeError("Buffer for %s is not defined." % self.__class__.__name__)
+
+    def __reader__(self, data):
+        self._data = data[0]
+
+
+class NInt(NMutable):
+    """
+    A simple mutable integer. Is serializable.
+    """
+    def __init__(self, v):
+        super(NInt, self).__init__(v, 'i')
+
+
+class NFloat(NMutable):
+    """
+    A simple mutable float. Is serializable.
+    """
+    def __init__(self, v):
+        super(NMutable, self).__init__(v, 'd')
+
+
+class NArray(collections.UserList):
+    def __init__(self, objectType):
+        super(NArray, self).__init__(self)
+        self._type = objectType
+
+    def append(self, item):
+        if isinstance(item, self._type):
+            super(NArray, self).append(item)
+
+    def extend(self, arr):
+        if any(map(lambda x: not isinstance(x, self._type), arr)):
+            raise RuntimeError("Input isn't a single-typed list.")
+        else:
+            super(NArray, self).extend(arr)
+
+    def __archive__(self, Ar):
+        pass
+        # @TODO finish __archive__() for NArray.
+
+    def __binaryreader__(self, data):
+        pass
+        # @TODO Finish reader for NArray().
 
 
 class NString(collections.UserString):
@@ -608,3 +709,6 @@ class NVector(NPoint):
             z  # Z
         )
 
+
+def getClass(classNameStr):
+    return globals()[classNameStr]
