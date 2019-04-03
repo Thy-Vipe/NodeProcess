@@ -90,7 +90,10 @@ class NFunctionBase(NObject):
         super(NFunctionBase, self).__init__(FuncName, Owner)
 
         self._exposedPropsValues = {}
+
+        NATTR(self, '_thenDelegate', EAttrType.AT_Serializable, EAttrType.AT_SingleCastDelegate)
         self._thenDelegate = DelegateSingle("ThenDelegate_%s" % self.getName())
+
         self._funcType = FuncType
 
         if FuncType == EFuncType.FT_Pure:

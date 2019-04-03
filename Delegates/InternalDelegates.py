@@ -1,5 +1,6 @@
 from Nodes.CoreObject import NObject
 from Nodes import CoreUtils
+from Nodes.Decorators import *
 
 
 class BoundMethod:
@@ -21,6 +22,15 @@ class BoundMethod:
     def getOwner(self):
         return self.__Owner
 
+    def __archive__(self, Ar):
+        Ar << self.__Owner.getUUID() if self.__Owner else NString("None")
+        Ar << self.__ObjectRef.getUUID()
+        Ar << NString(self.__FuncName)
+
+    def __reader__(self, data):
+        # @TODO Implement __reader__ for BoundMethod.
+        pass
+
 
 class Delegate(NObject):
     """
@@ -29,13 +39,14 @@ class Delegate(NObject):
     """
     def __init__(self, name, Owner=None):
         super(Delegate, self).__init__(name, Owner)
+
+        NATTR(self, '_functions', EAttrType.AT_Serializable)
         self._functions = []
 
     def bindFunction(self, *args):
         """
         Expects either a function reference or an object and a function name string.
         :param args: either a single method, or an object instance, followed by a name string.
-        :return: No return value.
         """
         bError = False
 
@@ -99,6 +110,7 @@ class Delegate(NObject):
                 raise TypeError("Input param 1 is not callable and is not a string.")
 
         return None
+
 
 
 class DelegateSingle(Delegate):

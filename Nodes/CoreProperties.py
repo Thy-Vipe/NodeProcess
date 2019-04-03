@@ -3,14 +3,22 @@ from __future__ import division
 from functools import reduce
 import math
 from numbers import Real
-import array, struct
+import array, struct, collections
 
 from PySide2.QtCore import QPoint, QPointF
 
 
-
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
+
+
+class EAttrType:
+    AT_Serializable = 0
+    AT_ReadOnly = 1
+    AT_ReadWrite = 2
+    AT_MulticastDelegate = 3
+    AT_SingleCastDelegate = 4
+    AT_Getter = 5
 
 
 class EPropType:
@@ -29,9 +37,18 @@ class EFuncType:
 
 
 class NArchive(object):
+    """
+    Archive class. Used for serializing data into binary. Can be dumped into a json file.
+    Use the "<<" on any class that implements __archive__(Ar) to serialize the object's data.
+    NArchive can be converted into byteArrays (in a tuple holding the sequence buffer and the data itself) in order to be quickly
+    convertible / transmittable if needed.
+
+    Use NMemoryReader in order to read from byte arrays or byte sequences. NArchive serializes data into byte sequences that can then be converted into
+    byte arrays using NArchive.toByteArrays().
+    """
     def __init__(self):
         super(NArchive, self).__init__()
-        self.byteBuffers = []
+        self._byteBuffers = []
         self.position = 0
 
     def __lshift__(self, other):
@@ -39,60 +56,31 @@ class NArchive(object):
             other.__archive__(self)
 
         else:
-            raise TypeError("%s does not implement __archive__()." % other.__name__)
+            raise TypeError("%s does not implement __archive__()." % other.__class__.__name__)
 
     def __add__(self, buffer):
-        self.byteBuffers.append(buffer)
+        if isinstance(buffer, tuple) and len(buffer) == 2:
+            self._byteBuffers.append(buffer)
+            self.position += 1
+        else:
+            raise TypeError("Invalid input: buffer must be a tuple holding the buffer and the binary data.")
 
     def toByteArrays(self):
-        res = []
-        for item in self.byteBuffers:
-            s = struct.Struct(item[0])
-            ar = array.array('I', [0] * s.size)
-            data = s.unpack(item[1])
-            s.pack_into(ar, 0, *data)
-            res.append((item[0], ar))
+        if not NArchive.ensure(self._byteBuffers, array.array):
+            res = []
+            for item in self._byteBuffers:
+                s = struct.Struct(item[0])
+                ar = array.array('I', [0] * s.size)
+                data = s.unpack(item[1])
+                s.pack_into(ar, 0, *data)
+                res.append((item[0], ar))
 
-        return res
-
-
-class NMemoryReader(NArchive):
-    def __init__(self, inBuffer):
-        super(NMemoryReader, self).__init__()
-        bUseBytes = False
-        if len(inBuffer) != 0:
-            if NMemoryReader.ensure(inBuffer, array.array):
-                self.byteBuffers = inBuffer
-                bUseBytes = True
-            elif NMemoryReader.ensure(inBuffer, tuple):
-                self.byteBuffers = inBuffer
-
-        self.__memoryType = int(bUseBytes)
-
-
-    def __lshift__(self, other):
-        if hasattr(other, "__reader__"):
-            # If memory is bytes buffer
-            if self.__memoryType == 1:
-                data = self.byteBuffers[self.position]
-                unpackedBin = struct.unpack_from(data[0], data[1], 0)
-                other.__reader__(unpackedBin)
-
-            elif self.__memoryType == 0:
-                data = self.byteBuffers[self.position]
-                unpackedBin = struct.unpack(data[0], data[1])
-                other = other.__reader__(unpackedBin)
-
+            return res
         else:
-            raise TypeError("%s does not implement __reader__()." % other.__name__)
+            return self._byteBuffers
 
-
-
-    def seek(self, pos):
-        if pos < len(self.byteBuffers):
-            self.position = pos
-        else:
-            raise IndexError("Ensure condition failed: position < len(byteBuffer) != True")
+    def getData(self):
+        return self._byteBuffers
 
     @staticmethod
     def ensure(inList, classType, position=1):
@@ -105,16 +93,147 @@ class NMemoryReader(NArchive):
 
         return True
 
+    @staticmethod
+    def headerSeparator():
+        return 16
 
-class NString(str, object):
+    @staticmethod
+    def intSize():
+        return 16
+
+    def writeToFile(self, binary_file, objName):
+        # Write all the data contained in our buffer
+        byteInfo = []
+        int_size = NArchive.intSize()
+        # will be used at the end to indicate the position of the end of this chunk.
+        count = binary_file.write(b'0'.zfill(int_size))
+
+        for buffer, data in self.getData():
+            byteInfo.append(binary_file.write(buffer.encode()))
+            count += byteInfo[-1]
+            byteInfo.append(binary_file.write(data))
+            count += byteInfo[-1]
+            binary_file.flush()
+
+        # Write header of this file at the end, that way we know where the header exactly begins.
+        binLen = len(byteInfo)
+        buff = '%dI' % binLen
+        byteInfoLen = binary_file.write(struct.pack(buff, *byteInfo)); count += byteInfoLen
+        count += binary_file.write(byteInfoLen.to_bytes(int_size, 'big', signed=False))
+        count += binary_file.write(binLen.to_bytes(int_size, 'big', signed=False))
+        nameLen = binary_file.write(objName.encode())
+        print(nameLen)
+        add = binary_file.write(nameLen.to_bytes(int_size, 'big', signed=False)); count += add; print(add, count)
+        h = binary_file.write(b'0'.zfill(NArchive.headerSeparator())); count += h; print(h, count)
+
+        # now use the preallocated 16 bits to write the length of this chunk.
+        binary_file.seek(0, 0)
+        binary_file.write(count.to_bytes(int_size, 'big', signed=False))
+        binary_file.seek(count)
+        binary_file.flush()
+
+    @staticmethod
+    def decodeFile(binary_file):
+        pos = 0
+        output = {}
+        all_data = binary_file.read()
+        # print(all_data)
+        j = len(all_data)
+        int_size = NArchive.intSize()
+        # Get the header for chunk x
+        binary_file.seek(0, 0)
+        while pos < j:
+            # Get the end of the first chunk. Written at the very start of the header in the 16 first bits.
+            nextpos = int.from_bytes(binary_file.read(int_size), 'big', signed=False); print(nextpos)
+            tpos = nextpos - (NArchive.headerSeparator()+int_size); print(tpos)
+            binary_file.seek(tpos)
+            nameBuffer = int.from_bytes(binary_file.read(int_size), 'big', signed=False); print(nameBuffer)
+            objName = binary_file.read(nameBuffer).decode()
+            print(objName)
+            arrayBufferLen = int.from_bytes(binary_file.read(int_size), 'big', signed=False)
+            arrayBytesCnt = int.from_bytes(binary_file.read(int_size), 'big', signed=False)
+            binary_file.seek(-(arrayBytesCnt + int_size), 1)
+            buffer = '%dI' % arrayBufferLen
+            arr = struct.unpack(buffer, binary_file.read(arrayBytesCnt))
+
+            data = []
+            s = pos + NArchive.headerSeparator()
+            for p in arr:
+                data.append(binary_file.read(p))
+                s += p
+
+            output[objName] = data
+            print(data)
+
+            pos = nextpos
+
+        return output
+
+
+
+
+
+class NMemoryReader(NArchive):
+    """
+    Use NMemoryReader to deserialize data from byte arrays or byte sequences.
+    Upon construction, NMemoryReader expects a tuple of byteArrays or byte sequences to operate with.
+    Use "<<" to deserialize data from NMemoryReader. Make sure to deserialize data in the exact order it was serialized with,
+    or the results will be incorrect.
+    Classes must implement __reader__(data) in order to read data from NMemoryReader.
+    """
+    def __init__(self, inBuffer):
+        super(NMemoryReader, self).__init__()
+        bUseBytes = False
+        if len(inBuffer) != 0:
+            if NMemoryReader.ensure(inBuffer, array.array):
+                self._byteBuffers = inBuffer
+                bUseBytes = True
+            elif NMemoryReader.ensure(inBuffer, tuple):
+                self._byteBuffers = inBuffer
+
+        self.__memoryType = int(bUseBytes)
+
+
+    def __lshift__(self, other):
+        if hasattr(other, "__reader__"):
+            # If memory is bytes buffer
+            if self.__memoryType == 1:
+                data = self._byteBuffers[self.position]
+                unpackedBin = struct.unpack_from(data[0], data[1], 0)
+                other.__reader__(unpackedBin)
+
+            # If memory is bytes sequence
+            elif self.__memoryType == 0:
+                data = self._byteBuffers[self.position]
+                unpackedBin = struct.unpack(data[0], data[1])
+                other.__reader__(unpackedBin)
+
+            self.position += 1
+
+        elif hasattr(other, '__binaryreader__'):
+            end = other.__binaryreader__(self.toByteArrays())
+            # mark end of data.
+            self.position = end + 1
+
+        else:
+            raise TypeError("%s does not implement __reader__(data) or __binaryreader__(data)." % other.__class__.__name__)
+
+
+
+    def seek(self, pos):
+        if pos < len(self._byteBuffers):
+            self.position = pos
+        else:
+            raise IndexError("Ensure condition failed: position < len(byteBuffer) != True")
+
+
+
+class NString(collections.UserString):
     """
     Extension of class "str" with more methods used for NodeProcess.
+    We're using a wrapper for str here, because str isn't easy to work with.
+    The main difference is that NString is MUTABLE.
     """
-    def __init__(self, content=""):
-        super(NString, self).__init__()
-
-    def __new__(cls, content):
-        return str.__new__(cls, content)
 
     def __archive__(self, Ar):
         """
@@ -124,22 +243,20 @@ class NString(str, object):
         """
         encoding = '%ds' % len(self)
         s = struct.Struct(encoding)
-        buffer = s.pack(self.encode())
+        buffer = s.pack(self.data.encode())
         Ar += (encoding, buffer)
 
     def __reader__(self, data):
-        self += data[0].decode()
-
-
+        self.data = data[0].decode()
 
     @staticmethod
-    def fromString(inString):
+    def toString(inObject):
         """
         Casts a string/stringifiable object into NString.
-        :param inString: The string to cast from
+        :param inObject: The object to "cast" from
         :return: The new NString.
         """
-        return NString(str(inString))
+        return NString(str(inObject))
 
 
 class NPoint2D(object):
@@ -157,7 +274,7 @@ class NPoint2D(object):
         :param Ar: The input archive to serialize into / deserialize from. Modifies the input directly.
         :type Ar: NArchive.
         """
-        s = struct.Struct('2f')
+        s = struct.Struct('2d?')
         Ar += ('2d?', s.pack(self.x, self.y, self.__IsInt))
 
     def __reader__(self, data):
@@ -226,7 +343,7 @@ class NPoint2D(object):
 
 class NPoint(object):
     """NPoint class: Represents a point in the x, y, z space."""
-    def __init__(self, x, y, z=0):
+    def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
         self.y = y
         self.z = z
@@ -305,7 +422,7 @@ class NVector(NPoint):
     Cylindrical coordinates in the r, theta, z space.(Cylindrical class method)
     """
 
-    def __init__(self, x, y, z):
+    def __init__(self, x=0.0, y=0.0, z=0.0):
         """Vectors are created in rectangular coordniates
         to create a vector in spherical or cylindrical
         see the class methods
@@ -335,7 +452,7 @@ class NVector(NPoint):
         return self.cross(anotherVector)
 
     def __str__(self):
-        return "{0},{1},{2}".format(self.x, self.y, self.z)
+        return "{0}({1},{2},{3})".format(self.__class__.__name__, self.x, self.y, self.z)
 
     def add(self, number):
         """Return a NVector as the product of the vector and a real number."""
@@ -471,17 +588,3 @@ class NVector(NPoint):
             z  # Z
         )
 
-
-string = NString("wow, impressive")
-pnt = NPoint(64, 532.0, 850.5621)
-ar = NArchive()
-ar << string
-ar << pnt
-
-binary = ar.toByteArrays()
-
-mem = NMemoryReader(binary)
-smth = NString("")
-mem << smth
-
-print(smth)

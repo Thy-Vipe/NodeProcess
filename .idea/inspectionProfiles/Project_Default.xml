@@ -30,5 +30,15 @@
         </list>
       </option>
     </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="Nodes.CoreObject.NObject.__PropFlags__" />
+          <option value="Nodes.CoreObject.NObject.setGeometry" />
+          <option value="PySide2.QtCore.Signal.Signal.emit" />
+          <option value="Nodes.CoreObject.NObject.setObjectName" />
+        </list>
+      </option>
+    </inspection_tool>
   </profile>
 </component>

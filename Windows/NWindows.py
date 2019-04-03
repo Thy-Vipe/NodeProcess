@@ -16,9 +16,6 @@ class NMainWindow(Main_Interface.MainWindowBuild, CoreNWindows.NWidget, QtWidget
         self.setupUi(self)
 
 
-
-
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     win = NMainWindow(None)
