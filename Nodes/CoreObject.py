@@ -48,7 +48,7 @@ class NObject(object):
             if EAttrType.AT_Serializable in self.__PropFlags__.get(prop, ()):
                 propInst = getattr(self, prop)
                 try:
-                    # Do not recursively serialize objects. Only properties. Get UUID for objects.
+                    # Do not recursively serialize NObjects. Only properties. Get UUID for objects.
                     if isinstance(propInst, NObject):
                         Ar << propInst.getUUID()
                     else:
@@ -73,75 +73,11 @@ class NObject(object):
                     obj.__reader__(dt)
 
                     idx += 1
-            # @TODO Finish implementation of __reader__(data) in NObject.
 
-        return idx - 1
+        return idx
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name)
 
 
 
-obj = NObject("name")
-Ar = NArchive()
-
-Ar << obj
-Ar << NPoint2D(35.254654, 8.99990001)
-
-newNode = NObject()
-print(Ar.getData())
-mem = NMemoryReader(Ar.getData())
-mem.seek(0)
-mem << newNode
-
-print(newNode.getName(), newNode.getUUID())
-dataOrd = []
-with open("C:\\Users\\ThyVi\\Desktop\\testBinaryjson.narchive", 'w') as f:
-
-    with open("C:\\Users\\ThyVi\\Desktop\\testBinary_tmp.narchive", 'wb') as fb:
-
-        # for buffer, data in Ar.getData():
-        #     dataOrd.append(fb.write(buffer.encode()))
-        #     dataOrd.append(fb.write(data))
-        #     fb.flush()
-        #
-        #
-        # # write header of file
-        #
-        # buff = '%dI' % len(dataOrd)
-        # length = fb.write(struct.pack(buff, *dataOrd))
-        # fb.write(length.to_bytes(8, 'big', signed=False))
-        # fb.write(len(dataOrd).to_bytes(8, 'big', signed=False))
-
-        Ar.writeToFile(fb, 'test')
-
-    # print(dataOrd)
-#
-# with open("C:\\Users\\ThyVi\\Desktop\\testBinary_tmp.narchive", 'rb') as f:
-#
-#     print(f.read())
-#     f.seek(-16, 2)
-#     arrlength = int.from_bytes(f.read(8), 'big')
-#     print(arrlength)
-#     buffcnt = int.from_bytes(f.read(8), 'big')
-#     buffer = "%dI" % buffcnt
-#     f.seek(-(arrlength+16), 1)
-#     arr = struct.unpack(buffer, f.read(arrlength))
-#     print(arr)
-#
-#     i = 0
-#     t = 0
-#     f.seek(0,0)
-#     binary = []
-#     for p in arr:
-#         binary.append(f.read(p))
-#         f.seek(t + p, 0)
-#         t += p
-#
-#     print(binary)
-
-#
-#
-with open("C:\\Users\\ThyVi\\Desktop\\testBinary_tmp.narchive", 'rb') as f:
-    print("=================================================")
-    print(NArchive.decodeFile(f))
