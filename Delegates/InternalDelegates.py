@@ -1,36 +1,58 @@
 from Nodes.CoreObject import NObject
 from Nodes import CoreUtils
 from Nodes.Decorators import *
+from Nodes.CoreProperties import *
+
+import global_accessor as GA
 
 
 class BoundMethod(object):
     def __init__(self, owning_del=None, owner=None, o=None, fname='', fRef=None):
-        self.__owningDelegate = owning_del
-        self.__Owner = owner
-        self.__ObjectRef = o
-        self.__FuncRef = fRef
-        self.__FuncName = fname
+        CLASS_BODY(self)
+
+        NATTR(self, '_owningDelegate', EAttrType.AT_Serializable)
+        self._owningDelegate = owning_del
+
+        NATTR(self, '_Owner', EAttrType.AT_Serializable)
+        self._Owner = owner
+
+        NATTR(self, '_ObjectRef', EAttrType.AT_Serializable)
+        self._ObjectRef = o
+
+        self._FuncRef = fRef
+
+        NATTR(self, 'FuncName', EAttrType.AT_Serializable)
+        self._FuncName = fname
+
 
     def call(self, *args, **kwargs):
-        return self.__FuncRef(*args, **kwargs)
+        return self._FuncRef(*args, **kwargs)
 
     def getFuncName(self):
-        return self.__FuncName
+        return self._FuncName
 
     def getLinkedObject(self):
-        return self.__ObjectRef
+        return self._ObjectRef
 
     def getOwner(self):
-        return self.__Owner
+        return self._Owner
 
     def __archive__(self, Ar):
-        Ar << (self.__Owner.getUUID() if self.__Owner else NString("None"))
-        Ar << (self.__ObjectRef.getUUID() if self.__ObjectRef else NString("None"))
-        Ar << NString(self.__FuncName)
+        # print('BOUND METHOD OBJECTS', self._Owner, self._ObjectRef, self._owningDelegate)
+        ownerID = self._Owner.getUUID() if self._Owner else NString("None")
+        ObjectID = self._ObjectRef.getUUID() if self._ObjectRef else NString("None")
+        Ar << ownerID
+        Ar << ObjectID
+        Ar << self._owningDelegate.getUUID()
+        Ar << NString(self._FuncName)
 
     def __reader__(self, data):
-        print(data)
-        # @TODO Implement __reader__ for BoundMethod.
+        # print('BOUND METHOD DATA:', data)
+        self._Owner = GA.getInstance(data[0])
+        self._ObjectRef = GA.getInstance(data[1])
+        self._owningDelegate = GA.getInstance(data[2])
+        self._FuncRef = getattr(self._ObjectRef, data[3])
+        # @TODO Finish debugging this. self._Owner is never saved / recovered for obscure reasons. It's probably stupid but I am tired.
         pass
 
 
@@ -40,10 +62,14 @@ class Delegate(NObject):
     It keeps track of the objects the functions are attached to, allowing a fairly simple access of relatives.
     """
     def __init__(self, name, Owner=None):
-        super(Delegate, self).__init__(name, Owner)
+        if Owner and not isinstance(Owner, NObject):
+            raise RuntimeError("Delegate Owner must be NObject, got %s" % Owner.__class__.__name__)
+
+        super(Delegate, self).__init__(Owner.getWorld() if Owner else None, name, Owner)
 
         NATTR(self, '_functions', EAttrType.AT_Serializable)
-        self._functions = []
+        self._functions = NArray(BoundMethod)
+
 
     def bindFunction(self, *args):
         """
@@ -97,15 +123,15 @@ class Delegate(NObject):
     def findFunc(self, funcNameOrObj, obj=None):
         for bm in self._functions:
             if isinstance(funcNameOrObj, str):
-                if bm.FuncName == funcNameOrObj:
+                if bm.getFuncName() == funcNameOrObj:
                     if obj is not None:
-                        if bm.ObjectRef == obj:
+                        if bm.getLinkedObject() == obj:
                             return bm
                     else:
                         return bm
 
             elif callable(funcNameOrObj):
-                if bm.FuncRef == funcNameOrObj:
+                if bm.getFuncRef() == funcNameOrObj:
                     return bm
 
             else:
@@ -136,11 +162,11 @@ class DelegateSingle(Delegate):
 
 
 class DelegateMulticast(Delegate):
-    def __init__(self, name, Owner=None):
+    def __init__(self, name="", Owner=None):
         super(DelegateMulticast, self).__init__(name, Owner)
 
 
-class Listener(DelegateSingle):
+class CollectorSingle(DelegateSingle):
 
     def execute(self, *args, **kwargs):
         """
@@ -155,7 +181,7 @@ class Listener(DelegateSingle):
             print(Warning("{0} was called but is not bound to any function.".format(self.getName())))
 
 
-class Collector(Delegate):
+class CollectorMulticast(Delegate):
     def execute(self, *args, **kwargs):
         results = []
         for func in self._functions:
@@ -163,37 +189,45 @@ class Collector(Delegate):
 
         return results
 
-# def test_function():
-#     print("hi")
-#
-# Ar = NArchive()
-# l = [NObject(None, "a"), NObject(None, "b"), NObject(None, "c")]
-# d = Delegate('testdelegate')
-# d.bindFunction(test_function)
-#
-# Ar << l[0]
-#
-# Ar = Ar.combine()
+
+
+
+
+class owner(NObject):
+    def __init__(self):
+        super(owner, self).__init__()
+
+class Custom(NObject):
+
+    def printsomething(self):
+        print("hey, that worked")
+
+    def printelse(self):
+        print("cool")
+
+
+
+obj = Custom(None, 'testobj')
+d = DelegateMulticast('my delegate', obj)
+d.bindFunction(obj, 'getName')
+a = NArray(NString)
+a.append(NString('hi'))
+a.append(NString('heee'))
 
 Ar = NArchive()
+Ar << obj
+Ar << d
+Ar << a
 
-Ar << NObject(None, "my object")
+d2 = DelegateMulticast()
+obj2 = Custom()
+a2 = NArray(NString)
+# print(Ar.getData())
+mem = NMemoryReader(Ar.getData())
 
-other = NObject()
+mem << obj2
+mem << d2
+mem << a2
 
-print(Ar.getData())
-mm = NMemoryReader(Ar.getData())
-mm << other
-
-print(other.getName())
-# Ar.writeToFile(open("C:\\Users\\leoco\\Desktop\\file.narchive", "wb"), "object")
-#
-# newl = [NObject(None), NObject(None), NObject(None)]
-# newd = Delegate("")
-# with open("C:\\Users\\leoco\\Desktop\\file.narchive", "rb") as ow:
-#     data = NArchive.decodeFile(ow)
-#     m = NMemoryReader(data["object"])
-#     m << newl
-#     m << newd
-#
-# newl[0].getName()
+print(a2)
+# print(d2.getName(), obj2.getName())
