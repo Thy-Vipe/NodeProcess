@@ -23,6 +23,7 @@ class ECurrentState:
     ADD_SELECT = 5
     SUB_SELECT = 6
     TGL_SELECT = 7
+    CREATE_OBJECT = 8
 
 
 class NWidget(NObject):
@@ -34,7 +35,8 @@ class NWidget(NObject):
     OnGeometryChange = QtCore.Signal(QtCore.QRect)
 
     def __init__(self, owner, name=""):
-        NObject.__init__(self, name, owner)
+        NObject.__init__(self, None, owner, name)
+
 
 
         self.__anchor = None
@@ -59,8 +61,85 @@ class NWidget(NObject):
         self.__anchor.update()
 
 
+class NListItem(QtWidgets.QListWidgetItem):
+    def __init__(self, p):
+        super(NListItem, self).__init__(p)
+
+
+class NListWidget(QtWidgets.QListWidget):
+    def __init__(self, p):
+        super(NListWidget, self).__init__(p)
+
+
+class NCreationDialog(NWidget, QtWidgets.QWidget):
+    def __init__(self, p, pos, **kwargs):
+        NWidget.__init__(self, p.getWorld(), p)
+        QtWidgets.QWidget.__init__(self, p)
+        self.setObjectName("Object_spawner")
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.resize(383, 318)
+        self.move(pos)
+        self.setAutoFillBackground(False)
+        self.setStyleSheet("background-color: rgba(46, 49, 54, 90); border-radius: 5px;")
+        self.setInputMethodHints(QtCore.Qt.ImhNone)
+
+        d = kwargs.get("ViewportClickedDelegate", None)
+        if d:
+            d.connect(self._onViewportClick)
+
+        # Widgets
+        self.verticalLayoutWidget = None
+        self.verticalLayout = None
+        self.textEdit = None
+        self.listWidget = None
+
+        self._constructWidget()
+        self._populateQlist()
+        self.show()
+
+
+    def _constructWidget(self):
+        self.verticalLayoutWidget = QtWidgets.QWidget(self)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 381, 321))
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.textEdit = QtWidgets.QTextEdit(self.verticalLayoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(self.textEdit.sizePolicy().hasHeightForWidth())
+        self.textEdit.setSizePolicy(sizePolicy)
+        self.textEdit.setMinimumSize(QtCore.QSize(0, 17))
+        self.textEdit.setMaximumSize(QtCore.QSize(16777215, 30))
+        self.textEdit.setStyleSheet("background-color: rgb(128, 128, 135);\n")
+        self.textEdit.setFrameShape(QtWidgets.QFrame.Box)
+        self.textEdit.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.textEdit.setLineWidth(1)
+        self.textEdit.setMidLineWidth(1)
+        self.textEdit.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.textEdit.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.textEdit.setTabStopWidth(20)
+        self.textEdit.setPlaceholderText("")
+        self.textEdit.setObjectName("textEdit")
+        self.verticalLayout.addWidget(self.textEdit)
+        self.listWidget = QtWidgets.QListWidget(self.verticalLayoutWidget)
+        self.listWidget.setFrameShape(QtWidgets.QFrame.Box)
+        self.listWidget.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.listWidget.setObjectName("listWidget")
+        self.verticalLayout.addWidget(self.listWidget)
+
+    def _onViewportClick(self, event: QtCore.QEvent):
+        self.close()
+
+    def _populateQlist(self):
+        self.listWidget.addItem(QtWidgets.QListWidgetItem())
+
+
 class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
     signal_KeyPressed = QtCore.Signal(str)
+    sg_ViewportClicked = QtCore.Signal(QtCore.QEvent)
 
     def __init__(self, parent):
         NWidget.__init__(self, parent)
@@ -70,6 +149,7 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
         self.gridSnapToggle = False
         self._nodeSnap = False
         self.selectedNodes = None
+        self._creationDialog = None
 
         # Connections data.
         self.drawingConnection = False
@@ -151,6 +231,13 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
             self.initMouse = QtGui.QCursor.pos()
             self.setInteractive(False)
 
+        elif (event.button() == QtCore.Qt.RightButton and
+                event.modifiers() == QtCore.Qt.NoModifier):
+            self.currentState = ECurrentState.CREATE_OBJECT
+            self.initMousePos = event.pos()
+            print('got right click')
+            # @TODO spawn UI object spawner here.
+
 
         # Drag view
         elif event.button() == QtCore.Qt.MiddleButton:
@@ -205,6 +292,7 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
         else:
             self.currentState = ECurrentState.DEFAULT
 
+        self.sg_ViewportClicked.emit(event)
         super(NGraphicsView, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -274,6 +362,8 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
             self.zoomIncr = 0
             self.setInteractive(True)
 
+        elif self.currentState == ECurrentState.CREATE_OBJECT:
+            self.SpawnCreateObjDialog(event.pos())
 
         # Drag View.
         elif self.currentState == ECurrentState.DRAG_VIEW:
@@ -357,6 +447,12 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
 
         if event.key() in self.pressedKeys:
             self.pressedKeys.remove(event.key())
+
+    def SpawnCreateObjDialog(self, pos):
+        if self._creationDialog:
+            self._creationDialog.close()
+
+        self._creationDialog = NCreationDialog(self, pos, ViewportClickedDelegate=self.sg_ViewportClicked)
 
     def _initRubberBand(self, position):
         """

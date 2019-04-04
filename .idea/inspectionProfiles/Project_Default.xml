@@ -37,6 +37,7 @@
           <option value="Nodes.CoreObject.NObject.setGeometry" />
           <option value="PySide2.QtCore.Signal.Signal.emit" />
           <option value="Nodes.CoreObject.NObject.setObjectName" />
+          <option value="Windows.CoreNWindows.NWidget.getParent" />
         </list>
       </option>
     </inspection_tool>

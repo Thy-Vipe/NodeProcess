@@ -25,8 +25,13 @@ class BoundMethod(object):
         self._FuncName = fname
 
 
-    def call(self, *args, **kwargs):
-        return self._FuncRef(*args, **kwargs)
+    def call(self, ResultStatus, *args, **kwargs):
+        if self._FuncRef:
+            ResultStatus.set(EStatus.kSuccess)
+            return self._FuncRef(*args, **kwargs)
+        else:
+            # Mark current item for garbage collection if function reference is dead.
+            ResultStatus.set(EStatus.kError)
 
     def getFuncName(self):
         return self._FuncName
@@ -52,7 +57,6 @@ class BoundMethod(object):
         self._ObjectRef = GA.getInstance(data[1])
         self._owningDelegate = GA.getInstance(data[2])
         self._FuncRef = getattr(self._ObjectRef, data[3])
-        # @TODO Finish debugging this. self._Owner is never saved / recovered for obscure reasons. It's probably stupid but I am tired.
         pass
 
 
@@ -112,8 +116,18 @@ class Delegate(NObject):
             raise TypeError("{input} is not a function type or NObject reference, or the passed-in function name is not valid.".format(input=str(args[0])))
 
     def execute(self, *args, **kwargs):
+        garbageFunctions = []
         for func in self._functions:
-            func.call(*args, **kwargs)
+            Status = NStatus()
+            func.call(Status, *args, **kwargs)
+
+            if Status.get() != EStatus.kSuccess:
+                garbageFunctions.append(func)
+
+        for idx in range(len(garbageFunctions)).__reversed__():
+            item = garbageFunctions.pop(idx)
+            del item
+
 
         return
 
@@ -149,7 +163,7 @@ class DelegateSingle(Delegate):
         if len(self._functions) == 0:
             super(DelegateSingle, self).bindFunction(*args)
         else:
-            raise Warning("{0} is already bound to a method.".format(str(self)))
+            warnings.warn("{0} is already bound to a method.".format(str(self)))
 
     def removeFunction(self, *args):
         """
@@ -176,7 +190,13 @@ class CollectorSingle(DelegateSingle):
 
     def call(self, *args, **kwargs):
         if len(self._functions) != 0:
-            return self._functions[0].call(*args, **kwargs)
+            status = NStatus()
+            res = self._functions[0].call(status, *args, **kwargs)
+            if not status.isError():
+                return res
+            else:
+                del self._functions[0]
+                return None
         else:
             print(Warning("{0} was called but is not bound to any function.".format(self.getName())))
 
@@ -184,50 +204,18 @@ class CollectorSingle(DelegateSingle):
 class CollectorMulticast(Delegate):
     def execute(self, *args, **kwargs):
         results = []
+        garbage = []
         for func in self._functions:
-            results.append(func.call(*args, **kwargs))
+            status = NStatus()
+            res = func.call(status, *args, **kwargs)
+            if not status.isError():
+                results.append(res)
+            else:
+                garbage.append(func)
+
+        for idx in range(len(garbage)).__reversed__():
+            item = garbage.pop(idx)
+            del item
 
         return results
 
-
-
-
-
-class owner(NObject):
-    def __init__(self):
-        super(owner, self).__init__()
-
-class Custom(NObject):
-
-    def printsomething(self):
-        print("hey, that worked")
-
-    def printelse(self):
-        print("cool")
-
-
-
-obj = Custom(None, 'testobj')
-d = DelegateMulticast('my delegate', obj)
-d.bindFunction(obj, 'getName')
-a = NArray(NString)
-a.append(NString('hi'))
-a.append(NString('heee'))
-
-Ar = NArchive()
-Ar << obj
-Ar << d
-Ar << a
-
-d2 = DelegateMulticast()
-obj2 = Custom()
-a2 = NArray(NString)
-# print(Ar.getData())
-mem = NMemoryReader(Ar.getData())
-
-mem << obj2
-mem << d2
-mem << a2
-
-print(a2)
-# print(d2.getName(), obj2.getName())

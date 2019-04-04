@@ -114,8 +114,8 @@ class NFunctionBase(NObject):
     def then(self):
         self._thenDelegate.execute()
 
-    def bindThenTo(self, obj, funcname=""):
-        func = obj if callable(obj) else getattr(obj, funcname)
+    def bindThenTo(self, obj: NObject, funcname: str):
+        func = getattr(obj, funcname)
         # <then> cannot be bound to non-DelegateIn functions if the property it's being attached to is exposed to nodes.
         bHasExposedProp = hasattr(func, EXPOSEDPROPNAME)
         if bHasExposedProp and func.propType == EPropType.PT_FuncDelegateIn:

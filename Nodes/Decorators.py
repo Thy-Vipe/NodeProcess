@@ -1,6 +1,6 @@
 import modulefinder, warnings
 import global_accessor as g_a
-import os, sys
+from Nodes.CoreUtils import *
 
 #  ========================================== Class generators ==========================================
 
@@ -46,7 +46,13 @@ class EPropType:
     PT_Readable = 4
 
 
-def Property(*PropTypes, **kwargs):
+def Property(*PropTypes: EPropType, **kwargs):
+    """
+    Decorator for NProperties. Must be used for properties (methods) that are readable in visual scripting, in order
+    to define the behavior to adopt to read / use these properties on the VS node.
+    :param PropTypes: Must be value(s) from EPropType.
+    :param kwargs: Extra keyword arguments.
+    """
     def register_wrapper(func):
         Values = list(PropTypes)
         Values.append(EPropType.PT_Readable)

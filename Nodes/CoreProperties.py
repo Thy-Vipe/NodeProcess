@@ -9,8 +9,6 @@ from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA
 from Nodes.Decorators import *
 
-def getClass(classNameStr, glob):
-    return glob[classNameStr]
 
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
@@ -22,6 +20,14 @@ class EFuncType:
     # Used if the logic behind the function object is simple / quick to execute
     FT_Pure = 1
 
+class EStatus:
+    # Delegate error
+    kError = 1
+
+    kSuccess = 0
+
+    # All good
+    Default = -1
 
 class NArchive(object):
     """
@@ -224,7 +230,7 @@ class NMemoryReader(NArchive):
     or the results will be incorrect.
     Classes must implement __reader__(data) or __binaryreader__(data) in order to read data from NMemoryReader.
     """
-    def __init__(self, inBuffer):
+    def __init__(self, inBuffer: (tuple, array.array)):
         super(NMemoryReader, self).__init__()
         bUseBytes = False
         if len(inBuffer) != 0:
@@ -314,6 +320,16 @@ class NFloat(NMutable):
     def __init__(self, v):
         super(NMutable, self).__init__(v, 'd')
 
+class NStatus(NMutable):
+    """
+    Result status by reference. Used for delegates and such.
+    Default state is EStatus.Default - meaning it was not modified.
+    """
+    def __init__(self, v=EStatus.Default):
+        super(NMutable, self).__init__(v, 'I')
+
+    def isError(self):
+        return self._data != EStatus.kSuccess and not self._data == EStatus.Default
 
 class NArray(collections.UserList):
     """
@@ -349,7 +365,7 @@ class NArray(collections.UserList):
 
         Ar += OwnAr.combine()
 
-    def __binaryreader__(self, data):
+    def __binaryreader__(self, data: (list, tuple)):
         # isinstance(data[0], int) would be true if this array is nested into an other node. If it is standalone it will not require such.
         print('array:',data[0], len(data[0]) if not isinstance(data[0], int) else '')
         if (len(data) == 2 and not isinstance(data[0], int)) or (len(data) == 1 and len(data[0]) == 2 and not isinstance(data[0], int)):
@@ -360,7 +376,7 @@ class NArray(collections.UserList):
             values = list(map(lambda x: x.decode() if hasattr(x, 'decode') else x, data))
 
         count, typ = values[0], values[1]
-        print(count, typ)
+        # print(count, typ)
         self._typ = GA.findClass(typ)
         data = values[2::]
         arr_count = len(data) // count
@@ -391,7 +407,7 @@ class NString(collections.UserString):
 
         CLASS_PROP_BODY(self)
 
-    def __archive__(self, Ar):
+    def __archive__(self, Ar: NArchive):
         """
         Serialize NString into a byte buffer.
         :param Ar: The input archive to serialize into. Modifies the input directly.
@@ -402,7 +418,7 @@ class NString(collections.UserString):
         buffer = s.pack(self.data.encode())
         Ar += (encoding, buffer)
 
-    def __reader__(self, data):
+    def __reader__(self, data: (list, tuple, str)):
         """
         Deserialize NString from bytes / get from value.
         :param data: the data to read from.

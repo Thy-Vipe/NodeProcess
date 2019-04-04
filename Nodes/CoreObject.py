@@ -50,7 +50,7 @@ class NObject(object):
     def getWorld(self):
         return self._world
 
-    def __archive__(self, Ar):
+    def __archive__(self, Ar: NArchive):
         """
         Automatically serializes any property that is marked as serializable using EAttrType.AT_Serializable when declaring the attribute.
         Any property marked as serializable must hold an object that overrides the '__archive__(Ar&)' method, or TypeError will be thrown.
@@ -72,7 +72,7 @@ class NObject(object):
 
         Ar += OwnAr.combine()
 
-    def __binaryreader__(self, data):
+    def __binaryreader__(self, data: (list, tuple)):
         """
         NObject __binaryreader__ expects a list of tuples of buffers and byte arrays, the data is unpacked within this function.
         :param data: The list of tuples of buffers and byte arrays.
