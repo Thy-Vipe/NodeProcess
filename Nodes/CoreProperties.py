@@ -387,20 +387,21 @@ class NArray(collections.UserList):
         count, typ = values[0], values[1]
         # print(count, typ)
         self._typ = GA.findClass(typ)
-        data = values[2::]
-        arr_count = len(data) // count
+        dds_data = values[2::]
+        arr_count = len(dds_data) // count
+        b_len = str(len(typ)).__len__(); buffer = data[0][0][2+b_len::]
         if self._typ:
             for idx in range(count):
                 new = self._typ()
                 if hasattr(new, '__reader__'):
-                    new.__reader__(data[idx*arr_count:idx*arr_count+arr_count])
+                    new.__reader__(dds_data[idx*arr_count:idx*arr_count+arr_count])
 
                 elif hasattr(new, '__binaryreader__'):
                     # @TODO Add support for binary deserialization of nested objects from NArray.
-                    warnings.warn("Binary deserialization of nested items in NArray are not yet supported.", RuntimeWarning)
+                    # binary = struct.pack(, *dds_data[idx*arr_count:idx*arr_count+arr_count])
+                    warnings.warn("Binary deserialization of nested items in NArray is not yet supported.", RuntimeWarning)
                     break
 
-                print(new)
                 self.append(new)
 
         return 1
