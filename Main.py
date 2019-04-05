@@ -11,13 +11,16 @@ if __name__ == "__main__":
     lp = __file__.rsplit("/", 1)[0]; sys.path.extend([lp, lp.replace("/", "\\")]); del lp
 
 
-g_a.registerFunction(Core.NFunctionBase)
-# @TODO finish adding other registerable functions.
-
-
 class APPLICATION(Core.NWorld):
     def __init__(self):
         super(APPLICATION, self).__init__()
+
+        APPLICATION.registerFunctions()
+
+    @staticmethod
+    def registerFunctions():
+        g_a.registerFunction(Core.NFunctionBase)
+        # @TODO finish adding other registerable functions.
 
     def spawnInterface(self):
         self._WindowReference = Win.NMainWindow(self)

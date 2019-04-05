@@ -12,7 +12,7 @@ class NWorld(NObject):
         It runs independently from the Ui parts of the code, and handles the logical side of it.
     """
     def __init__(self):
-        super(NWorld, self).__init__("Main")
+        super(NWorld, self).__init__(name="Main")
         self.CPU_COUNT = multiprocessing.cpu_count()
         # Can be defined when the window is spawned.
         self._WindowReference = None
@@ -51,6 +51,33 @@ class NWorld(NObject):
             self._registered_objects[obj.getUUID()] = obj
         else:
             raise TypeError("%s is not of type NObject." % obj.__class__.__name__)
+
+
+class NScript(object):
+    """
+    Class representing a dynamic script to be executed with the python interpreter.
+    It is fully serializable as string, but does not preserve the class references,
+    and therefore needs to be spawned non-dynamically with the expected globals, locals and extras.
+    """
+    def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
+        self._script = script
+        self._globals = global_vars if global_vars else {}
+        self._locals = local_vars if local_vars else {}
+
+        for k, v in extraVars.items():
+            self._locals[k] = v
+
+    def exec(self):
+        exec(self._script, self._globals, self._locals)
+
+    def __archive__(self, Ar):
+        Ar << NString(self._script)
+
+    def __reader__(self, data):
+        new = NString()
+        new.__reader__(data)
+        self._script = new.get()
+
 
 class NDynamicAttr(NObject):
     """
@@ -93,7 +120,7 @@ class NDynamicAttr(NObject):
 
 class NFunctionBase(NObject):
     def __init__(self, FuncName, Owner=None, FuncType=EFuncType.FT_Callable):
-        super(NFunctionBase, self).__init__(FuncName, Owner)
+        super(NFunctionBase, self).__init__(name=FuncName, owner=Owner)
 
         self._exposedPropsValues = {}
 
@@ -123,3 +150,5 @@ class NFunctionBase(NObject):
         elif not bHasExposedProp:
             self._thenDelegate.bindFunction(obj, funcname)
 
+    def type_(self):
+        return self._funcType

@@ -1,23 +1,12 @@
 from Delegates import InternalDelegates as NDel
-from Nodes.Core import NObject
+from Nodes.Core import NObject, NScript
 import threading
-
-
-class NScript(object):
-    def __init__(self, script, global_vars=None, local_vars=None):
-        self._script = script
-        self._globals = global_vars if global_vars else {}
-        self._locals = local_vars if local_vars else {}
-
-
-    def exec(self):
-        exec(self._script, self._globals, self._locals)
 
 
 class NThread(threading.Thread, NObject):
     def __init__(self, threadName, owner=None):
         threading.Thread.__init__(self)
-        NObject.__init__(self, threadName, owner)
+        NObject.__init__(self, name=threadName, owner=owner)
         self.__dispatchedTicks = NDel.Delegate("%s_Delegate" % threadName, self)
         self._globalData = {}
         self.script_to_run = None

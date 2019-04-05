@@ -2,6 +2,29 @@ import uuid, json, warnings
 from Nodes.Decorators import *
 from Nodes.CoreProperties import *
 import global_accessor as GA
+import weakref
+
+
+class NWeakRef(weakref.ref):
+    """
+    Extension of weak reference.
+    """
+    def __init__(self, ob, callback=None, **annotations):
+        super(NWeakRef, self).__init__(ob, callback)
+
+        for k, v in annotations.items():
+            setattr(self, k, v)
+
+
+class NWeakMethod(weakref.WeakMethod):
+    def __init__(self, *args, **kwargs):
+        super(NWeakMethod, self).__init__(*args, **kwargs)
+
+
+class NFinalizer(weakref.finalize):
+    def __init__(self, obj, callback, *args, **kwargs):
+        super(NFinalizer, self).__init__(obj, callback, *args, **kwargs)
+
 
 class NObject(object):
     """
@@ -9,19 +32,23 @@ class NObject(object):
         for every other NObject subclass. It is made of overridable functions that are expected to be used everywhere in many different instances.
         Every NObject has a 64-bit UUID that is used to have every object be "unique".
     """
-    def __init__(self, world=None, name="", inOwner=None):
+    def __init__(self, **kwargs):
 
         CLASS_BODY(self)
+
+        inOwner = kwargs.get('owner', None); world = kwargs.get('world', None); assert world.__class__.__name__ == 'NWorld' if world else True
 
         NATTR(self, '_uuid', EAttrType.AT_Serializable)
         self._uuid = NString(uuid.uuid4())
 
         NATTR(self, '_name', EAttrType.AT_Serializable)
-        self._name = NString(name)
+        self._name = NString(kwargs.get('name', "Unnamed"))
 
         NATTR(self, '_owner', EAttrType.AT_Serializable)
-        self._owner = inOwner
-        self._world = world if (world and world.__class__.__name__ == 'NWorld') else None
+        self._owner = NWeakRef(inOwner) if kwargs.get("UseHardRef", False) and inOwner else inOwner
+
+        #  Always keep a hard reference of NWorld.
+        self._world = world
 
         if self.getWorld():
             self._world.registerObjectWithWorld(self)
@@ -45,7 +72,7 @@ class NObject(object):
         Get the object that owns this, if defined. Can be None.
         :return: The object owning this object.
         """
-        return self._owner
+        return self._owner()
 
     def getWorld(self):
         return self._world

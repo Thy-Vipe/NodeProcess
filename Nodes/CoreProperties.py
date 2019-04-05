@@ -12,6 +12,7 @@ from Nodes.Decorators import *
 
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
+EXPOSED_EXTRADATA = "extra_data"
 
 
 class EFuncType:
@@ -28,6 +29,12 @@ class EStatus:
 
     # All good
     Default = -1
+
+
+class Error_Type(object):
+    def __init__(self):
+        pass
+
 
 class NArchive(object):
     """
@@ -309,7 +316,7 @@ class NInt(NMutable):
     """
     A simple mutable integer. Is serializable.
     """
-    def __init__(self, v):
+    def __init__(self, v: int):
         super(NInt, self).__init__(v, 'i')
 
 
@@ -317,23 +324,25 @@ class NFloat(NMutable):
     """
     A simple mutable float. Is serializable.
     """
-    def __init__(self, v):
+    def __init__(self, v: float):
         super(NMutable, self).__init__(v, 'd')
+
 
 class NStatus(NMutable):
     """
     Result status by reference. Used for delegates and such.
     Default state is EStatus.Default - meaning it was not modified.
     """
-    def __init__(self, v=EStatus.Default):
+    def __init__(self, v: EStatus = EStatus.Default):
         super(NMutable, self).__init__(v, 'I')
 
     def isError(self):
         return self._data != EStatus.kSuccess and not self._data == EStatus.Default
 
+
 class NArray(collections.UserList):
     """
-    NArray is a serializable array, that is mutable and behaves exactly like a list.
+    NArray is a serializable array, that is mutable and behaves exactly like a list that would enforce a specific type.
     Upon deserialization, NArray re-spawns the objects that were contained in it, and recovers the states they were in, according to their __reader__(data)
     """
     def __init__(self, objectType):
@@ -367,7 +376,7 @@ class NArray(collections.UserList):
 
     def __binaryreader__(self, data: (list, tuple)):
         # isinstance(data[0], int) would be true if this array is nested into an other node. If it is standalone it will not require such.
-        print('array:',data[0], len(data[0]) if not isinstance(data[0], int) else '')
+
         if (len(data) == 2 and not isinstance(data[0], int)) or (len(data) == 1 and len(data[0]) == 2 and not isinstance(data[0], int)):
             values = struct.unpack_from(data[0][0], data[0][1], 0)[1:-1]
             values = list(map(lambda x: x.decode() if hasattr(x, 'decode') else x, values))
@@ -389,6 +398,7 @@ class NArray(collections.UserList):
                 elif hasattr(new, '__binaryreader__'):
                     # @TODO Add support for binary deserialization of nested objects from NArray.
                     warnings.warn("Binary deserialization of nested items in NArray are not yet supported.", RuntimeWarning)
+                    break
 
                 print(new)
                 self.append(new)
@@ -430,7 +440,7 @@ class NString(collections.UserString):
             self.data = data
 
     @staticmethod
-    def toString(inObject):
+    def toNString(inObject):
         """
         Casts a string/stringifiable object into NString.
         :param inObject: The object to "cast" from
@@ -441,12 +451,18 @@ class NString(collections.UserString):
     def copy(self):
         return NString(self)
 
+    def get(self):
+        return self.data
+
 
 class NPoint2D(object):
     """
     Npoint2D: Represents a point in 2D space.
     """
     def __init__(self, x=0, y=0, bForceInt=False):
+
+        CLASS_PROP_BODY(self)
+
         self.x = x
         self.y = y
         self.__IsInt = bForceInt
@@ -527,6 +543,9 @@ class NPoint2D(object):
 class NPoint(object):
     """NPoint class: Represents a point in the x, y, z space."""
     def __init__(self, x=0.0, y=0.0, z=0.0):
+
+        CLASS_PROP_BODY(self)
+
         self.x = x
         self.y = y
         self.z = z

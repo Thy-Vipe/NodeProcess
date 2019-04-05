@@ -8,6 +8,7 @@ if __name__ == "__main__":
 from Nodes.CoreObject import NObject
 from Nodes.CoreUtils import UCoreUtils
 from Nodes.CoreProperties import *
+from Nodes import Core
 from Windows import NWindowsUtils
 
 
@@ -33,9 +34,10 @@ class NWidget(NObject):
     """
     # Shared signal. Fired when the widget's geometry changes.
     OnGeometryChange = QtCore.Signal(QtCore.QRect)
+    sg_enterPressed = QtCore.Signal(QtCore.QObject)
 
     def __init__(self, owner, name=""):
-        NObject.__init__(self, None, owner, name)
+        NObject.__init__(self, owner=owner, name=name, UseHardRef=True)
 
 
 
@@ -61,19 +63,45 @@ class NWidget(NObject):
         self.__anchor.update()
 
 
-class NListItem(QtWidgets.QListWidgetItem):
+class NTextEdit(NWidget, QtWidgets.QLineEdit):
+
     def __init__(self, p):
-        super(NListItem, self).__init__(p)
+        NWidget.__init__(self, p)
+        QtWidgets.QLineEdit.__init__(self, p)
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
+            self.sg_enterPressed.emit(self)
+        else:
+            super(NTextEdit, self).keyPressEvent(e)
 
 
-class NListWidget(QtWidgets.QListWidget):
+class NListItem(NWidget, QtWidgets.QListWidgetItem):
+    def __init__(self, p=None, **kwargs):
+        NWidget.__init__(self, p)
+        QtWidgets.QListWidgetItem.__init__(self, p)
+        self._classToSpawn = kwargs.get('cls', kwargs.get('class', None))
+        self.setText(kwargs.get("tx", kwargs.get("text", "UNAMMED")))
+
+
+class NListWidget(NWidget, QtWidgets.QListWidget):
     def __init__(self, p):
-        super(NListWidget, self).__init__(p)
+        NWidget.__init__(self, p)
+        QtWidgets.QListWidget.__init__(self, p)
+
+    def keyPressEvent(self, event):
+        if (event.key() == QtCore.Qt.Key_Return or
+                event.key() == QtCore.Qt.Key_Enter):
+            self.sg_enterPressed.emit(self)
+        else:
+            super(NListWidget, self).keyPressEvent(event)
+
+
 
 
 class NCreationDialog(NWidget, QtWidgets.QWidget):
     def __init__(self, p, pos, **kwargs):
-        NWidget.__init__(self, p.getWorld(), p)
+        NWidget.__init__(self, p)
         QtWidgets.QWidget.__init__(self, p)
         self.setObjectName("Object_spawner")
         self.setWindowModality(QtCore.Qt.ApplicationModal)
@@ -83,20 +111,24 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
         self.setStyleSheet("background-color: rgba(46, 49, 54, 90); border-radius: 5px;")
         self.setInputMethodHints(QtCore.Qt.ImhNone)
 
+        # Widgets
+        self.verticalLayoutWidget = None
+        self.verticalLayout = None
+        self.lineInput = None
+        self.listWidget = None
+
+        self._constructWidget()
+
+        self.listWidget.itemClicked.connect(self._receiveItem)
+        self.listWidget.sg_enterPressed.connect(self._receiveEnter)
+        self.lineInput.sg_enterPressed.connect(self._receiveEnter)
+
         d = kwargs.get("ViewportClickedDelegate", None)
         if d:
             d.connect(self._onViewportClick)
 
-        # Widgets
-        self.verticalLayoutWidget = None
-        self.verticalLayout = None
-        self.textEdit = None
-        self.listWidget = None
-
-        self._constructWidget()
         self._populateQlist()
         self.show()
-
 
     def _constructWidget(self):
         self.verticalLayoutWidget = QtWidgets.QWidget(self)
@@ -105,26 +137,18 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.textEdit = QtWidgets.QTextEdit(self.verticalLayoutWidget)
+        self.lineInput = NTextEdit(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(1)
-        sizePolicy.setHeightForWidth(self.textEdit.sizePolicy().hasHeightForWidth())
-        self.textEdit.setSizePolicy(sizePolicy)
-        self.textEdit.setMinimumSize(QtCore.QSize(0, 17))
-        self.textEdit.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.textEdit.setStyleSheet("background-color: rgb(128, 128, 135);\n")
-        self.textEdit.setFrameShape(QtWidgets.QFrame.Box)
-        self.textEdit.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.textEdit.setLineWidth(1)
-        self.textEdit.setMidLineWidth(1)
-        self.textEdit.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.textEdit.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.textEdit.setTabStopWidth(20)
-        self.textEdit.setPlaceholderText("")
-        self.textEdit.setObjectName("textEdit")
-        self.verticalLayout.addWidget(self.textEdit)
-        self.listWidget = QtWidgets.QListWidget(self.verticalLayoutWidget)
+        sizePolicy.setHeightForWidth(self.lineInput.sizePolicy().hasHeightForWidth())
+        self.lineInput.setSizePolicy(sizePolicy)
+        self.lineInput.setMinimumSize(QtCore.QSize(0, 17))
+        self.lineInput.setMaximumSize(QtCore.QSize(16777215, 30))
+        self.lineInput.setStyleSheet("background-color: rgb(128, 128, 135);")
+        self.lineInput.setObjectName("textEdit")
+        self.verticalLayout.addWidget(self.lineInput)
+        self.listWidget = NListWidget(self.verticalLayoutWidget)
         self.listWidget.setFrameShape(QtWidgets.QFrame.Box)
         self.listWidget.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.listWidget.setObjectName("listWidget")
@@ -133,8 +157,33 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
     def _onViewportClick(self, event: QtCore.QEvent):
         self.close()
 
+    def _receiveItem(self, item: NListItem):
+        self.lineInput.setText(item.text())
+
+    def _receiveEnter(self, obj: QtCore.QObject):
+        text = self.lineInput.text()
+        new_object = GA.functionClasses.get(text, Error_Type)(text)
+
+        if not isinstance(new_object, Error_Type):
+            print('try create node')
+            new_node = NUiNodeObject(new_object)
+            # self.parent().scene().addItem(new_node)
+
+        g = QtGui.QBrush(QtCore.Qt.green)
+
+        out = QtGui.QPen(QtCore.Qt.black)
+        out.setWidth(2)
+
+        rectangle = self.parent().scene().addRect(100, 0, 80, 100, out, g)
+        self.parent().scene().addItem(new_node)
+
+
     def _populateQlist(self):
-        self.listWidget.addItem(QtWidgets.QListWidgetItem())
+        availableFuncs = GA.functionClasses.values()
+
+        for obj in availableFuncs:
+            newItem = NListItem(tx=obj.__name__, cls=obj)
+            self.listWidget.addItem(newItem)
 
 
 class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
@@ -572,7 +621,7 @@ class NGraphicsScene(QtWidgets.QGraphicsScene):
         super(NGraphicsScene, self).__init__(parent)
 
         # General.
-        self.gridSize = 50 # This is the size of grid to use. In pixels.
+        self.gridSize = 50  # This is the size of grid to use. In pixels.
         self.pen = None
 
         # Nodes storage.
@@ -822,26 +871,196 @@ class NConnection(NWidget, QtWidgets.QGraphicsPathItem):
         self.setPath(path)
 
 
-class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
-    def __init__(self, baseNode=None, parent=None):
-        NWidget.__init__(self, None, baseNode.getName() if baseNode else "UNDEFINED")
-        QtWidgets.QGraphicsItem.__init__(self, parent)
+class NUiNodeObject(QtWidgets.QGraphicsItem):
+    def __init__(self, baseNode: NObject = None):
+        # NWidget.__init__(self, None, baseNode.getName() if baseNode else "UNDEFINED")
+        super(NUiNodeObject, self).__init__()
 
         self._wrappedNode = None
         self._exposedAttributes = {}
-
+        # self._createStyle()
+        print('spawned ui node, base: %s' % baseNode)
         if baseNode:
             self._wrappedNode = baseNode
-            self._initializeAttrs()
+            # self._initializeAttrs()
 
+    def height(self):
+        """
+        Increment the final height of the node every time an attribute
+        is created.
+        """
+        count = self._exposedAttributes.__len__()
+        if count > 0:
+            return (self.baseHeight +
+                    self.attrHeight * count +
+                    self.border +
+                    0.5 * self.radius)
+        else:
+            return self.baseHeight
 
     def _initializeAttrs(self):
         for prop in dir(self._wrappedNode):
             item = getattr(self._wrappedNode, prop)
             if callable(item):
                 attr = getattr(item, EXPOSEDPROPNAME, None)
+                attrDetails = getattr(item, EXPOSED_EXTRADATA, None)
                 if attr and EPropType.PT_Readable in attr:
-                    self._exposedAttributes[prop] = NAttribute(attr.__name__, "", self)
+                    niceName = attrDetails.get('niceName', "")
+                    attr = NAttribute(prop, niceName, self)
+                    self._exposedAttributes[prop] = attr
+
+            elif isinstance(item, Core.NDynamicAttr):
+                pass
+
+    def _createStyle(self, config=None):
+        """
+        Read the node style from the configuration file.
+        """
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
+
+        # Dimensions.
+        self.baseWidth = 100 #config['node_width']
+        self.baseHeight = 150 #config['node_height']
+        self.attrHeight = 20 #config['node_attr_height']
+        self.border = 2 #config['node_border']
+        self.radius = 5 #config['node_radius']
+
+        self.nodeCenter = QtCore.QPointF()
+        self.nodeCenter.setX(self.baseWidth / 2.0)
+        self.nodeCenter.setY(self.height() / 2.0)
+
+        defaultcolor = QtGui.QColor(128, 128, 128)
+
+        self._brush = QtGui.QBrush()
+        self._brush.setStyle(QtCore.Qt.SolidPattern)
+        self._brush.setColor(defaultcolor)
+
+        self._pen = QtGui.QPen()
+        self._pen.setStyle(QtCore.Qt.SolidLine)
+        self._pen.setWidth(self.border)
+        self._pen.setColor(defaultcolor)
+
+        self._penSel = QtGui.QPen()
+        self._penSel.setStyle(QtCore.Qt.SolidLine)
+        self._penSel.setWidth(self.border)
+        self._penSel.setColor(defaultcolor)
+
+        self._textPen = QtGui.QPen()
+        self._textPen.setStyle(QtCore.Qt.SolidLine)
+        self._textPen.setColor(defaultcolor)
+
+        self._nodeTextFont = QtGui.QFont()
+        self._attrTextFont = QtGui.QFont()
+
+        self._attrBrush = QtGui.QBrush()
+        self._attrBrush.setStyle(QtCore.Qt.SolidPattern)
+
+        self._attrBrushAlt = QtGui.QBrush()
+        self._attrBrushAlt.setStyle(QtCore.Qt.SolidPattern)
+
+        self._attrPen = QtGui.QPen()
+        self._attrPen.setStyle(QtCore.Qt.SolidLine)
+
+    def boundingRect(self):
+        """
+        The bounding rect based on the width and height variables.
+        """
+        rect = QtCore.QRect(0, 0, self.baseWidth, self.height)
+        rect = QtCore.QRectF(rect)
+        return rect
+
+    def shape(self):
+        """
+        The shape of the item.
+        """
+        path = QtGui.QPainterPath()
+        path.addRect(self.boundingRect())
+        return path
+
+    def paint(self, painter, option, widget=None):
+        """
+        Paint the node and attributes.
+        """
+        # Node base.
+        painter.setBrush(self._brush)
+        painter.setPen(self.pen)
+
+        painter.drawRoundedRect(0, 0,
+                                self.baseWidth,
+                                self.height,
+                                self.radius,
+                                self.radius)
+
+        # Node label.
+        painter.setPen(self._textPen)
+        painter.setFont(self._nodeTextFont)
+
+        metrics = QtGui.QFontMetrics(painter.font())
+        text_width = metrics.boundingRect(self.name).width() + 14
+        text_height = metrics.boundingRect(self.name).height() + 14
+        margin = (text_width - self.baseWidth) * 0.5
+        textRect = QtCore.QRect(-margin,
+                                -text_height,
+                                text_width,
+                                text_height)
+
+        painter.drawText(textRect,
+                         QtCore.Qt.AlignCenter,
+                         self.name)
+
+        # Attributes.
+        offset = 0
+        for attr in self.attrs:
+            nodzInst = self.scene().views()[0]
+            config = nodzInst.config
+
+            # Attribute rect.
+            rect = QtCore.QRect(self.border / 2,
+                                self.baseHeight - self.radius + offset,
+                                self.baseWidth - self.border,
+                                self.attrHeight)
+
+            attrData = self.attrsData[attr]
+            name = attr
+
+            preset = attrData['preset']
+
+            # Attribute base.
+            tmpcolor = QtGui.QColor(128,128,128)
+            self._attrBrush.setColor(tmpcolor)
+            if self.alternate:
+                self._attrBrushAlt.setColor(tmpcolor)
+
+            self._attrPen.setColor(QtGui.QColor.black)
+            painter.setPen(self._attrPen)
+            painter.setBrush(self._attrBrush)
+            if (offset / self.attrHeight) % 2:
+                painter.setBrush(self._attrBrushAlt)
+
+            painter.drawRect(rect)
+
+            # Attribute label.
+            painter.setPen(QtGui.QColor.black)
+            painter.setFont(self._attrTextFont)
+
+            # Search non-connectable attributes.
+            if nodzInst.drawingConnection:
+                if self == nodzInst.currentHoveredNode:
+                    if (attrData['dataType'] != nodzInst.sourceSlot.dataType or
+                            (nodzInst.sourceSlot.slotType == 'plug' and attrData['socket'] == False or
+                             nodzInst.sourceSlot.slotType == 'socket' and attrData['plug'] == False)):
+                        # Set non-connectable attributes color.
+                        painter.setPen(tmpcolor)
+
+            textRect = QtCore.QRect(rect.left() + self.radius,
+                                    rect.top(),
+                                    rect.width() - 2 * self.radius,
+                                    rect.height())
+            painter.drawText(textRect, QtCore.Qt.AlignVCenter, name)
+
+            offset += self.attrHeight
 
 
 class NAttribute(NWidget, QtWidgets.QWidget):
@@ -856,7 +1075,35 @@ class NAttribute(NWidget, QtWidgets.QWidget):
         :type parent: Subclass of QWidget reference.
         """
         NWidget.__init__(self, parent, name)
-        QtWidgets.QWidget.__init__(self, parent)
-
+        QtWidgets.QWidget.__init__(self, None)
+        self._attrName = name
         self._displayName = niceName if niceName != "" else name
+
+        #  Widget refs
+        self.horizontalLayout = None
+        self.widget = None
+        self.label = None
+        self.widget_2 = None
+
+        self._construct()
+
+        self.setGeometry(QtCore.QRect(0, 0, 192, 24))
+
+    def _construct(self):
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.widget = QtWidgets.QWidget(self)
+        self.widget.setFixedSize(QtCore.QSize(20, 20))
+        self.widget.setStyleSheet("background-color: rgb(132, 132, 132); border: 2px solid rgba(0, 170, 230, 128); border-radius: 10px")
+        self.widget.setObjectName("widget")
+        self.horizontalLayout.addWidget(self.widget)
+        self.label = QtWidgets.QLabel(self)
+        self.label.setObjectName("label")
+        self.horizontalLayout.addWidget(self.label)
+        self.widget_2 = QtWidgets.QWidget(self)
+        self.widget_2.setFixedSize(QtCore.QSize(20, 20))
+        self.widget_2.setStyleSheet("background-color: rgb(132, 132, 132); border: 2px solid rgba(0, 170, 230, 128); border-radius: 10px")
+        self.widget_2.setObjectName("widget_2")
+        self.horizontalLayout.addWidget(self.widget_2)
 

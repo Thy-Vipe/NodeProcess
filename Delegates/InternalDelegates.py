@@ -1,8 +1,7 @@
-from Nodes.CoreObject import NObject
+from Nodes.CoreObject import NObject, NWeakRef, NWeakMethod
 from Nodes import CoreUtils
 from Nodes.Decorators import *
 from Nodes.CoreProperties import *
-
 import global_accessor as GA
 
 
@@ -11,15 +10,15 @@ class BoundMethod(object):
         CLASS_BODY(self)
 
         NATTR(self, '_owningDelegate', EAttrType.AT_Serializable)
-        self._owningDelegate = owning_del
+        self._owningDelegate = NWeakRef(owning_del)
 
         NATTR(self, '_Owner', EAttrType.AT_Serializable)
-        self._Owner = owner
+        self._Owner = NWeakRef(owner)
 
         NATTR(self, '_ObjectRef', EAttrType.AT_Serializable)
-        self._ObjectRef = o
+        self._ObjectRef = NWeakRef(o)
 
-        self._FuncRef = fRef
+        self._FuncRef = NWeakMethod(fRef)
 
         NATTR(self, 'FuncName', EAttrType.AT_Serializable)
         self._FuncName = fname
@@ -28,7 +27,7 @@ class BoundMethod(object):
     def call(self, ResultStatus, *args, **kwargs):
         if self._FuncRef:
             ResultStatus.set(EStatus.kSuccess)
-            return self._FuncRef(*args, **kwargs)
+            return self._FuncRef()(*args, **kwargs)
         else:
             # Mark current item for garbage collection if function reference is dead.
             ResultStatus.set(EStatus.kError)
@@ -37,26 +36,33 @@ class BoundMethod(object):
         return self._FuncName
 
     def getLinkedObject(self):
-        return self._ObjectRef
+        return self._ObjectRef()
 
     def getOwner(self):
-        return self._Owner
+        return self._Owner()
+
+    def _onConnectionDead(self, weakRef):
+        self._owningDelegate().connectionDied(self)
 
     def __archive__(self, Ar):
         # print('BOUND METHOD OBJECTS', self._Owner, self._ObjectRef, self._owningDelegate)
-        ownerID = self._Owner.getUUID() if self._Owner else NString("None")
-        ObjectID = self._ObjectRef.getUUID() if self._ObjectRef else NString("None")
+        ownerID = self._Owner().getUUID() if self._Owner else NString("None")
+        ObjectID = self._ObjectRef().getUUID() if self._ObjectRef else NString("None")
         Ar << ownerID
         Ar << ObjectID
-        Ar << self._owningDelegate.getUUID()
+        Ar << self._owningDelegate().getUUID()
         Ar << NString(self._FuncName)
 
     def __reader__(self, data):
         # print('BOUND METHOD DATA:', data)
-        self._Owner = GA.getInstance(data[0])
-        self._ObjectRef = GA.getInstance(data[1])
-        self._owningDelegate = GA.getInstance(data[2])
-        self._FuncRef = getattr(self._ObjectRef, data[3])
+        ownerObj = GA.getInstance(data[0])
+        linkedObj = GA.getInstance(data[1])
+        owningDel = GA.getInstance(data[2])
+        funcObj = getattr(self._ObjectRef(), data[3])
+        self._Owner = NWeakRef(ownerObj) if ownerObj else None
+        self._ObjectRef = NWeakRef(linkedObj) if linkedObj else None
+        self._owningDelegate = NWeakRef(owningDel) if owningDel else None
+        self._FuncRef = NWeakMethod(funcObj) if funcObj else None
         pass
 
 
@@ -69,7 +75,7 @@ class Delegate(NObject):
         if Owner and not isinstance(Owner, NObject):
             raise RuntimeError("Delegate Owner must be NObject, got %s" % Owner.__class__.__name__)
 
-        super(Delegate, self).__init__(Owner.getWorld() if Owner else None, name, Owner)
+        super(Delegate, self).__init__(world=Owner.getWorld() if Owner else None, name=name, owner=Owner, UseHardRef=True)
 
         NATTR(self, '_functions', EAttrType.AT_Serializable)
         self._functions = NArray(BoundMethod)
@@ -83,7 +89,7 @@ class Delegate(NObject):
         bError = False
 
         if callable(args[0]):
-            owningClass = CoreUtils.UCoreUtils.get_class_that_defined_method(args[0])
+            owningClass = args[0].__globals__.get('obj', None)
             name = args[0].__name__
             self._functions.append(BoundMethod(self, self.getOwner(), owningClass, name, args[0]))
         elif isinstance(args[0], NObject):
@@ -132,7 +138,11 @@ class Delegate(NObject):
         return
 
     def getBoundFunctions(self):
-        return self._functions
+        """
+        Get a list of weak references pointing to the bound function objects of this delegate.
+        :return: List of NWeakRef objects pointing to the bound functions.
+        """
+        return [NWeakRef(func) for func in self._functions]
 
     def findFunc(self, funcNameOrObj, obj=None):
         for bm in self._functions:
@@ -142,7 +152,7 @@ class Delegate(NObject):
                         if bm.getLinkedObject() == obj:
                             return bm
                     else:
-                        return bm
+                        raise RuntimeError("Passed-in function is a string, but no owning object reference was passed for it.")
 
             elif callable(funcNameOrObj):
                 if bm.getFuncRef() == funcNameOrObj:
@@ -152,6 +162,10 @@ class Delegate(NObject):
                 raise TypeError("Input param 1 is not callable and is not a string.")
 
         return None
+
+    def connectionDied(self, connection):
+        self._functions.remove(connection)
+        print('Deleted connection %s' % str(connection))
 
 
 
@@ -219,3 +233,7 @@ class CollectorMulticast(Delegate):
 
         return results
 
+
+
+
+d = Delegate('my delegate')
