@@ -21,6 +21,7 @@ class EFuncType:
     # Used if the logic behind the function object is simple / quick to execute
     FT_Pure = 1
 
+
 class EStatus:
     # Delegate error
     kError = 1
