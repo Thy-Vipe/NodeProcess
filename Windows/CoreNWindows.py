@@ -181,6 +181,7 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
 class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
     signal_KeyPressed = QtCore.Signal(str)
     sg_ViewportClicked = QtCore.Signal(QtCore.QEvent)
+    sg_NodeDeleted = QtCore.Signal(str)
 
     def __init__(self, parent):
         NWidget.__init__(self, parent)
@@ -581,10 +582,10 @@ class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
         selected_nodes = list()
         for node in self.scene().selectedItems():
             selected_nodes.append(node.name)
-            node._remove()
+            node.remove()
 
         # Emit signal.
-        self.signal_NodeDeleted.emit(selected_nodes)
+        self.sg_NodeDeleted.emit(selected_nodes)
 
     def _returnSelection(self):
         """
@@ -1079,10 +1080,14 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
         else:
             return self._pen
 
+    def remove(self):
+        # @TODO Allow node deletion.
+        pass
+
 
 class NAttribute(NWidget, QtWidgets.QWidget):
     def __init__(self, name, niceName="", owningobject=None, plug=None, socket=None, propRef=None):
-        # @TODO Make this function with QGraphicsItem.
+        # @TODO Make this object with QGraphicsItem.
         """
         Initialize a UI attribute. They represent an actual attribute on the node / function.
         :param name: The attribute name.

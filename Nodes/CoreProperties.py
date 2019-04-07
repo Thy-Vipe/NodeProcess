@@ -37,7 +37,12 @@ class Error_Type(object):
         pass
 
 
-class NArchive(object):
+class NProperty(object):
+    def __init__(self, *args, **kwargs):
+        CLASS_PROP_BODY(self)
+
+
+class NArchive(NProperty):
     """
     Archive class. Used for serializing data into binary. Can be dumped into a json file.
     Use the "<<" on any class that implements __archive__(Ar) to serialize the object's data.
@@ -289,11 +294,12 @@ class NMemoryReader(NArchive):
             raise IndexError("Ensure condition failed: position < len(byteBuffer) != True")
 
 
-class NMutable(object):
+class NMutable(NProperty):
     """
     A simple mutable object holding wildcard data. Is serializable if buffer is defined.
     """
     def __init__(self, v, buffer=''):
+        super(NMutable, self).__init__()
         self._data = v
         self._buffer = buffer
 
@@ -341,14 +347,15 @@ class NStatus(NMutable):
         return self._data != EStatus.kSuccess and not self._data == EStatus.Default
 
 
-class NArray(collections.UserList):
+class NArray(NProperty, collections.UserList):
     """
     NArray is a serializable array, that is mutable and behaves exactly like a list that would enforce a specific type.
     Upon deserialization, NArray re-spawns the objects that were contained in it, and recovers the states they were in, according to their __reader__(data)
     """
     def __init__(self, objectType):
-        super(NArray, self).__init__(self)
+        super(NArray, self).__init__()
         self._typ = objectType
+
 
     def append(self, item):
         if isinstance(item, self._typ):
@@ -408,13 +415,13 @@ class NArray(collections.UserList):
         return 1
 
 
-class NString(collections.UserString):
+class NString(collections.UserString, NProperty):
     """
     Extension of class "str" with more methods used for NodeProcess.
     We're using a wrapper for str here, because str isn't easy to work with.
     The main difference is that NString is MUTABLE.
     """
-    def __init__(self, seq=''):
+    def __init__(self, seq: str = ''):
         super(NString, self).__init__(seq)
 
         CLASS_PROP_BODY(self)
@@ -451,19 +458,18 @@ class NString(collections.UserString):
         return NString(str(inObject))
 
     def copy(self):
-        return NString(self)
+        return NString(self.data)
 
     def get(self):
         return self.data
 
 
-class NPoint2D(object):
+class NPoint2D(NProperty):
     """
     Npoint2D: Represents a point in 2D space.
     """
     def __init__(self, x=0, y=0, bForceInt=False):
-
-        CLASS_PROP_BODY(self)
+        super(NPoint2D, self).__init__()
 
         self.x = x
         self.y = y
@@ -542,11 +548,10 @@ class NPoint2D(object):
         return cls(pt.x(), pt.y(), type(pt.x()) is int)
 
 
-class NPoint(object):
+class NPoint(NProperty):
     """NPoint class: Represents a point in the x, y, z space."""
     def __init__(self, x=0.0, y=0.0, z=0.0):
-
-        CLASS_PROP_BODY(self)
+        super(NPoint, self).__init__()
 
         self.x = x
         self.y = y
@@ -635,7 +640,7 @@ class NVector(NPoint):
 
     def __add__(self, vec):
         """Add two vectors together"""
-        if(type(vec) == type(self)):
+        if isinstance(vec, NVector):
             return NVector(self.x + vec.x, self.y + vec.y, self.z + vec.z)
         elif isinstance(vec, Real):
             return self.add(vec)
@@ -660,7 +665,7 @@ class NVector(NPoint):
 
     def add(self, number):
         """Return a NVector as the product of the vector and a real number."""
-        return self.from_list([x + number for x in self])
+        return self.from_list([x + number for x in (self.x, self.y, self.z)])
 
     def multiply(self, number):
         """Return a NVector as the product of the vector and a real number."""
@@ -692,7 +697,7 @@ class NVector(NPoint):
             return (self.magnitude() * vector.magnitude() *
                     math.degrees(math.cos(theta)))
         return (reduce(lambda x, y: x + y,
-                [x * vector.vector[i] for i, x in self.to_list()()]))
+                [x * vector.vector[i] for i, x in self.to_list()]))
 
     def cross(self, vector):
         """Return a NVector instance as the cross product of two vectors"""
@@ -734,8 +739,8 @@ class NVector(NPoint):
         Non-parallel vectors are vectors which are neither parallel
         nor perpendicular to each other.
         """
-        if (self.is_parallel(vector) is not True and
-                self.is_perpendicular(vector) is not True):
+        if (self.parallel(vector) is not True and
+                self.perpendicular(vector) is not True):
             return True
         return False
 

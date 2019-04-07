@@ -233,7 +233,3 @@ class CollectorMulticast(Delegate):
 
         return results
 
-
-
-
-d = Delegate('my delegate')

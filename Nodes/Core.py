@@ -85,7 +85,7 @@ class NDynamicAttr(NObject):
     Any property that isn't a function flagged as Property using @Property(..) must use this class in order to be connectible / readable.
     """
     def __init__(self, name, initialValue=None, Owner=None):
-        super(NDynamicAttr, self).__init__(name, Owner)
+        super(NDynamicAttr, self).__init__(name=name, owner=Owner)
 
         self._value = initialValue
         self._valueChanged = Delegate("%s_ValueChangedDelegate" % self.getName(), self)
