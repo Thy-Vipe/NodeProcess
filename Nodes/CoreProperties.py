@@ -13,6 +13,16 @@ from Nodes.Decorators import *
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
 EXPOSED_EXTRADATA = "extra_data"
+DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
+             EDataType.DT_Array: (152, 153, 155),
+             EDataType.DT_Dict: (229, 201, 45),
+             EDataType.DT_Float: (164, 229, 45),
+             EDataType.DT_Int: (45, 229, 143),
+             EDataType.DT_String: (229, 45, 225),
+             EDataType.DT_Struct: (35, 44, 170),
+             EDataType.DT_Point: (15, 78, 224),
+             EDataType.DT_Vector: (224, 185, 14)
+             }
 
 
 class EFuncType:
@@ -44,7 +54,7 @@ class NProperty(object):
 
 class NArchive(NProperty):
     """
-    Archive class. Used for serializing data into binary. Can be dumped into a json file.
+    Archive class. Used for serializing data into binary. Can be dumped into a binary file.
     Use the "<<" on any class that implements __archive__(Ar) to serialize the object's data.
     NArchive can be converted into byteArrays (in a tuple holding the sequence buffer and the data itself) in order to be quickly
     convertible / transmittable if needed.
@@ -347,7 +357,7 @@ class NStatus(NMutable):
         return self._data != EStatus.kSuccess and not self._data == EStatus.Default
 
 
-class NArray(NProperty, collections.UserList):
+class NArray(collections.UserList, NProperty):
     """
     NArray is a serializable array, that is mutable and behaves exactly like a list that would enforce a specific type.
     Upon deserialization, NArray re-spawns the objects that were contained in it, and recovers the states they were in, according to their __reader__(data)
@@ -462,6 +472,9 @@ class NString(collections.UserString, NProperty):
 
     def get(self):
         return self.data
+
+    def toString(self):
+        return str(self)
 
 
 class NPoint2D(NProperty):

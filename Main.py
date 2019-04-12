@@ -20,6 +20,8 @@ class APPLICATION(Core.NWorld):
     @staticmethod
     def registerFunctions():
         g_a.registerFunction(Core.NFunctionBase)
+        g_a.registerFunction(Core.Tester)
+        g_a.registerFunction(Core.Print)
         # @TODO finish adding other registerable functions.
 
     def spawnInterface(self):

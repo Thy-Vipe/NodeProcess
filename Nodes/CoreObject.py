@@ -53,7 +53,8 @@ class NObject(object):
         if self.getWorld():
             self._world.registerObjectWithWorld(self)
 
-        CLASS_REGISTER(self)
+        if not kwargs.get('noClassRegister', False):
+            CLASS_REGISTER(self)
 
     def getUUID(self):
         return self._uuid.copy()
@@ -72,7 +73,7 @@ class NObject(object):
         Get the object that owns this, if defined. Can be None.
         :return: The object owning this object.
         """
-        return self._owner()
+        return self._owner() if self._owner else None
 
     def getWorld(self):
         return self._world
@@ -91,8 +92,8 @@ class NObject(object):
                 propInst = getattr(self, prop)
                 if propInst:
                     # Do not recursively serialize NObjects. Only properties.
-                    # Get UUID for objects unless they're declared as transient, in which case serialize.
-                    if isinstance(propInst, NObject) and EAttrType.AT_Transient not in __propFlags:
+                    # Get UUID for objects unless they're declared as persistent, in which case serialize.
+                    if isinstance(propInst, NObject) and EAttrType.AT_Persistent not in __propFlags:
                         OwnAr << propInst.getUUID()
                     else:
                         OwnAr << propInst

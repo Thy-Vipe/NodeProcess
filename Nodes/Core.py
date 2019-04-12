@@ -84,11 +84,12 @@ class NDynamicAttr(NObject):
     This is an "attribute object" that can be spawned dynamically into a class. It allows to hold and retrieve wildcard data from such.
     Any property that isn't a function flagged as Property using @Property(..) must use this class in order to be connectible / readable.
     """
-    def __init__(self, name, initialValue=None, Owner=None):
+    def __init__(self, name: (str, NString), dataType: EDataType, initialValue=None, Owner=None):
         super(NDynamicAttr, self).__init__(name=name, owner=Owner)
 
+        self._dataType = dataType
         self._value = initialValue
-        self._valueChanged = Delegate("%s_ValueChangedDelegate" % self.getName(), self)
+        self._valueChanged = DelegateMulticast("%s_ValueChangedDelegate" % self.getName(), self)
 
         # Becomes true whenever the input of this attribute is connected.
         self._hasPlug = False
@@ -100,7 +101,7 @@ class NDynamicAttr(NObject):
             self._valueChanged.execute(value)
 
     def get(self, bUpdate=True):
-        if bUpdate:
+        if bUpdate and self._plugDelegate.isBound():
             self._value = self._plugDelegate.call()
         return self._value
 
@@ -117,38 +118,63 @@ class NDynamicAttr(NObject):
     def getOutDelegate(self):
         return self._valueChanged
 
+    def dataType(self):
+        return self._dataType
+
 
 class NFunctionBase(NObject):
-    def __init__(self, FuncName, Owner=None, FuncType=EFuncType.FT_Callable):
-        super(NFunctionBase, self).__init__(name=FuncName, owner=Owner)
+    def __init__(self, funcName, Owner=None, FuncType=EFuncType.FT_Callable):
+        super(NFunctionBase, self).__init__(name=funcName, owner=Owner)
 
         self._exposedPropsValues = {}
 
         NATTR(self, '_thenDelegate', EAttrType.AT_Serializable, EAttrType.AT_SingleCastDelegate)
-        self._thenDelegate = DelegateSingle("ThenDelegate_%s" % self.getName())
+        self._thenDelegate = DelegateSingle("ThenDelegate_%s" % self.getName(), self)
 
         self._funcType = FuncType
 
         if FuncType == EFuncType.FT_Pure:
-            del self.execute; del self.bindThenTo; del self.then
+            del self.execute; del self.then
+
+        REGISTER_HOOK(self, 'then', self._thenDelegate)
 
 
-    @Property(EPropType.PT_FuncDelegateIn)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
+        # print("Node executed! Do awesome logic here...")
         self.then()
 
-    @Property(EPropType.PT_FuncDelegateOut)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
     def then(self):
+        # print("Then..call whatever needs calling.")
         self._thenDelegate.execute()
-
-    def bindThenTo(self, obj: NObject, funcname: str):
-        func = getattr(obj, funcname)
-        # <then> cannot be bound to non-DelegateIn functions if the property it's being attached to is exposed to nodes.
-        bHasExposedProp = hasattr(func, EXPOSEDPROPNAME)
-        if bHasExposedProp and func.propType == EPropType.PT_FuncDelegateIn:
-            self._thenDelegate.bindFunction(obj, funcname)
-        elif not bHasExposedProp:
-            self._thenDelegate.bindFunction(obj, funcname)
 
     def type_(self):
         return self._funcType
+
+
+class Tester(NFunctionBase):
+    def __init__(self, funcName):
+        super(Tester, self).__init__(funcName, None, EFuncType.FT_Callable)
+
+        NATTR(self, 'then', EAttrType.AT_kSlot)  # Mark this method as a slot for an execute button.
+
+
+    def execute(self):
+        """
+        /!\\ We do not use then here, it's not an exposed property.
+        """
+        pass
+
+
+class Print(NFunctionBase):
+    def __init__(self, funcName):
+        super(Print, self).__init__(funcName, None, EFuncType.FT_Callable)
+
+        NATTR(self, 'inputStr', EAttrType.AT_ReadWrite)
+        self.inputStr = NDynamicAttr('input string', EDataType.DT_String, '', self)
+
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    def execute(self):
+        print(self.inputStr.get())
+        self.then()

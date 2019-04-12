@@ -17,6 +17,7 @@ def findClass(typ):
 
 def addInstance(obj):
     global classInstances
+    print('registering new object: %s' % obj)
     classInstances[obj.getUUID()] = obj
 
 
@@ -46,3 +47,13 @@ def registerFunction(function):
     # In function must be the class, not an instance of it.
     if function.__name__ not in functionClasses.keys():
         functionClasses[function.__name__] = function
+
+
+def funcInstances(classType):
+    global classInstances
+    result = []
+    for k, v in classInstances.items():
+        if isinstance(v, classType):
+            result.append(v)
+
+    return result

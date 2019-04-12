@@ -41,6 +41,16 @@ class BoundMethod(object):
     def getOwner(self):
         return self._Owner()
 
+    def getDelegate(self):
+        return self._owningDelegate
+
+    def kill(self):
+        """
+        Kill this connection and remove it from the delegate.
+        """
+        print('Disconnecting %s' % str(self))
+        self._owningDelegate().removeFunction(self)
+
     def _onConnectionDead(self, weakRef):
         self._owningDelegate().connectionDied(self)
 
@@ -87,16 +97,18 @@ class Delegate(NObject):
         :param args: either a single method, or an object instance, followed by a name string.
         """
         bError = False
-
+        new = None
         if callable(args[0]):
             owningClass = args[0].__globals__.get('obj', None)
             name = args[0].__name__
-            self._functions.append(BoundMethod(self, self.getOwner(), owningClass, name, args[0]))
+            new = BoundMethod(self, self.getOwner(), owningClass, name, args[0])
+            self._functions.append(new)
         elif isinstance(args[0], NObject):
             funcRef = getattr(args[0], args[1], None)
 
             if funcRef is not None and callable(funcRef):
-                self._functions.append(BoundMethod(self, self.getOwner(), args[0], args[1], funcRef))
+                new = BoundMethod(self, self.getOwner(), args[0], args[1], funcRef)
+                self._functions.append(new)
             else:
                 bError = True
         else:
@@ -105,16 +117,20 @@ class Delegate(NObject):
         if bError:
             raise TypeError("{input} is not a function type or NObject reference, or the passed-in function name is not valid.".format(input=str(args[0])))
 
+        return new
+
     def removeFunction(self, *args):
         """
-        Expects either the function reference or an object and a function name string.
+        Expects either the function reference, an object and a function name string or the BoundMethod object instance.
         :param args: either a single method, or an object instance, followed by a name string.
         :return: No return value.
         """
         bError = False
-        BoundFunc = self.findFunc(*args)
+        print("haaaa")
+        BoundFunc = self.findFunc(*args) if not isinstance(args[0], BoundMethod) else args[0]
         if BoundFunc is not None:
             self._functions.remove(BoundFunc)
+            print(self._functions)
         else:
             bError = True
 
@@ -174,8 +190,8 @@ class DelegateSingle(Delegate):
         super(DelegateSingle, self).__init__(name, Owner)
 
     def bindFunction(self, *args):
-        if len(self._functions) == 0:
-            super(DelegateSingle, self).bindFunction(*args)
+        if self._functions.__len__() == 0:
+            return super(DelegateSingle, self).bindFunction(*args)
         else:
             warnings.warn("{0} is already bound to a method.".format(str(self)))
 
@@ -183,7 +199,7 @@ class DelegateSingle(Delegate):
         """
         /!\\ Not used by this class.
         """
-        pass
+        self.clear()
 
     def clear(self):
         del self._functions[0]
@@ -212,7 +228,10 @@ class CollectorSingle(DelegateSingle):
                 del self._functions[0]
                 return None
         else:
-            print(Warning("{0} was called but is not bound to any function.".format(self.getName())))
+            print("{0} was called but is not bound to any function.".format(self.getName()))
+
+    def isBound(self):
+        return len(self._functions) != 0
 
 
 class CollectorMulticast(Delegate):
