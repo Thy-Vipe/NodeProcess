@@ -81,7 +81,7 @@ class Delegate(NObject):
     This class allows to dynamically link NObject's functions together.
     It keeps track of the objects the functions are attached to, allowing a fairly simple access of relatives.
     """
-    def __init__(self, name, Owner=None):
+    def __init__(self, name, Owner=None, **kwargs):
         if Owner and not isinstance(Owner, NObject):
             raise RuntimeError("Delegate Owner must be NObject, got %s" % Owner.__class__.__name__)
 
@@ -89,6 +89,8 @@ class Delegate(NObject):
 
         NATTR(self, '_functions', EAttrType.AT_Serializable)
         self._functions = NArray(BoundMethod)
+
+        self._mode = kwargs.get('mode', 0)  # Can be 0 or 1. If mode is 1, Delegate will be destroyed once all functions are cleared.
 
 
     def bindFunction(self, *args):
@@ -142,6 +144,11 @@ class Delegate(NObject):
 
         if bError:
             raise TypeError("{input} is not a function type or NObject reference, or the passed-in function name is not valid.".format(input=str(args[0])))
+
+        if self._mode == 1:
+            if len(self._functions) == 0:
+                g_a.killInstance(self.getUUID())
+                pass
 
     def execute(self, *args, **kwargs):
         garbageFunctions = []

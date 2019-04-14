@@ -1,5 +1,7 @@
 import warnings, collections
 
+import memory_handling as mh
+
 ActiveClasses = {}
 classInstances = {}
 functionClasses = {}
@@ -24,6 +26,19 @@ def addInstance(obj):
 def getInstance(uuid):
     global classInstances
     return classInstances.get(uuid, None)
+
+
+def killInstance(uuid):
+    global classInstances
+    obj = classInstances[uuid]
+    print("Removing %s from registered objects." % obj)
+    del classInstances[uuid]
+
+    refs = mh.getReferrers(obj)
+    mh.clearReferences(refs)
+
+
+
 
 def getInstanceByName(name: str):
     global classInstances

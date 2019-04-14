@@ -327,14 +327,10 @@ class ToString(NFunctionBase):
     def __init__(self, funcName):
         super(ToString, self).__init__(funcName, None, EFuncType.FT_Pure)
 
-        self._convert = DelegateMulticast('convertDelegate_%s' % self.getName(), self)
-        self._val = ''
-        REGISTER_HOOK(self, 'result', self._convert)
+        NATTR(self, 'result', EAttrType.AT_ReadOnly)
+        self.result = NDynamicAttr('result', EDataType.DT_String, '', self, noInput=True)
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Variant)
     def input(self, v):
-        self._val = str(v)
+        self.result.set(str(v))
 
-    @Property(EPropType.PT_Output, dataType=EDataType.DT_String)
-    def result(self):
-        self._convert.execute(self._val)
