@@ -14,7 +14,7 @@ from Windows import NWindowsUtils
 
 class ECurrentState:
     """
-    Enum used for NGraphics View states.
+    Enum used for NGraphicsView states.
     """
     DEFAULT = 0
     ZOOM_VIEW = 1
@@ -27,7 +27,7 @@ class ECurrentState:
     CREATE_OBJECT = 8
 
 
-class NWidget(NObject):
+class NWidgetBase(NObject):
     """
     Base class for widgets. Designed to be used as a friend class of any QWidget subclass.
     Cannot function on its own and needs to be wrapped with a QWidget.
@@ -42,11 +42,11 @@ class NWidget(NObject):
         self.__anchor = None
 
     def setGeometry(self, geo):
-        super(NWidget, self).setGeometry(geo)
+        super(NWidgetBase, self).setGeometry(geo)
         self.OnGeometryChange.emit(geo)
 
     def setObjectName(self, name):
-        super(NWidget, self).setObjectName(name)
+        super(NWidgetBase, self).setObjectName(name)
         self.setName(name)
 
     def getAnchor(self):
@@ -56,9 +56,22 @@ class NWidget(NObject):
         """
         return self.__anchor
 
-    def addAnchor(self, inPosA, inPosB):
-        self.__anchor = NWindowsUtils.NAnchor(self.getParent(), self, inPosA, inPosB)
+    def anchor(self, anchorType, inOwnerOverride=None, bParentIsWindow=False):
+        """
+        Anchor this widget to the parent with the current position.
+        """
+        self.__anchor = NWindowsUtils.NAnchor(anchorType, self.parent() if not inOwnerOverride else inOwnerOverride, self, bParentIsWindow=bParentIsWindow)
         self.__anchor.update()
+
+    def resizeEvent(self, event):
+        super(NWidgetBase, self).resizeEvent(event)
+        self.OnGeometryChange.emit(self.geometry())
+
+
+class NWidget(NWidgetBase, QtWidgets.QWidget):
+    def __init__(self, parent):
+        NWidgetBase.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
 
 class NPropertyDisplay(QtWidgets.QWidget):
@@ -78,30 +91,61 @@ class NPropertyDisplay(QtWidgets.QWidget):
         self._layout.addWidget(obj)
         self.content.append(obj)
 
-class NTextEdit(NWidget, QtWidgets.QLineEdit):
 
+class NLineEdit(NWidgetBase, QtWidgets.QLineEdit):
     def __init__(self, p):
-        NWidget.__init__(self, p)
+        NWidgetBase.__init__(self, p)
         QtWidgets.QLineEdit.__init__(self, p)
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
             self.sg_enterPressed.emit(self)
         else:
-            super(NTextEdit, self).keyPressEvent(e)
+            super(NLineEdit, self).keyPressEvent(e)
 
 
-class NListItem(NWidget, QtWidgets.QListWidgetItem):
+class NSpinBox(NWidgetBase, QtWidgets.QSpinBox):
+    def __init__(self, p):
+        NWidgetBase.__init__(self, p)
+        QtWidgets.QSpinBox.__init__(self, p)
+        self.setButtonSymbols(QtWidgets.QSpinBox.NoButtons)
+
+
+class NDoubleBox(NWidgetBase, QtWidgets.QDoubleSpinBox):
+    def __init__(self, p):
+        NWidgetBase.__init__(self, p)
+        QtWidgets.QDoubleSpinBox.__init__(self, p)
+        self.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
+
+
+class NScriptEd(NWidgetBase, QtWidgets.QTextEdit):
+    sg_newText = QtCore.Signal(str)
+    sg_enterPressed_get = QtCore.Signal(str)
+
+    def __init__(self, parent):
+        NWidgetBase.__init__(self, parent)
+        QtWidgets.QTextEdit.__init__(self, parent)
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
+            self.sg_enterPressed.emit(self)
+            self.sg_enterPressed_get.emit(self.toPlainText())
+
+        self.sg_newText.emit(self.toPlainText())
+        super(NScriptEd, self).keyPressEvent(e)
+
+
+class NListItem(NWidgetBase, QtWidgets.QListWidgetItem):
     def __init__(self, p=None, **kwargs):
-        NWidget.__init__(self, p)
+        NWidgetBase.__init__(self, p)
         QtWidgets.QListWidgetItem.__init__(self, p)
         self._classToSpawn = kwargs.get('cls', kwargs.get('class', None))
         self.setText(kwargs.get("tx", kwargs.get("text", "UNAMMED")))
 
 
-class NListWidget(NWidget, QtWidgets.QListWidget):
+class NListWidget(NWidgetBase, QtWidgets.QListWidget):
     def __init__(self, p):
-        NWidget.__init__(self, p)
+        NWidgetBase.__init__(self, p)
         QtWidgets.QListWidget.__init__(self, p)
 
     def keyPressEvent(self, event):
@@ -112,17 +156,17 @@ class NListWidget(NWidget, QtWidgets.QListWidget):
             super(NListWidget, self).keyPressEvent(event)
 
 
-class NPropertiesDialog(NWidget, QtWidgets.QDialog):
+class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
     """
     When spawned, procedurally reads the attributes of the node it's attached to.
     """
     def __init__(self, parent, nodeObj):
-        NWidget.__init__(self, parent)
+        NWidgetBase.__init__(self, parent)
         QtWidgets.QDialog.__init__(self, parent)
         # self.setWindowModality(QtCore.Qt.ApplicationModal)
 
         assert isinstance(nodeObj, Core.NFunctionBase)
-        self.resize(175,100)
+        self.resize(175, 100)
         self.nodeObj = Core.NWeakRef(nodeObj)
         # self._layoutWid = QtWidgets.QWidget(self)
         self._layout = QtWidgets.QVBoxLayout(self)
@@ -134,11 +178,32 @@ class NPropertiesDialog(NWidget, QtWidgets.QDialog):
         for prop in dir(self.nodeObj()):
             propInst = getattr(self.nodeObj(), prop)
             propData = self.nodeObj().__PropFlags__.get(prop, ())
-            if isinstance(propInst, Core.NDynamicAttr):
+            if isinstance(propInst, Core.NDynamicAttr) and EAttrType.AT_ReadOnly not in propData:
                 dt = propInst.dataType()
                 if dt == EDataType.DT_String:
-                    tx = NTextEdit(self)
+                    tx = NLineEdit(self)
+                    tx.setText(str(propInst.get()))
                     tx.textChanged.connect(propInst.set)
+                    obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                    self._layout.addWidget(obj)
+
+                elif dt == EDataType.DT_Script:
+                    tx = NScriptEd(self)
+                    tx.setText(str(propInst.get()))
+                    tx.sg_enterPressed_get.connect(propInst.set)
+                    self._layout.addWidget(tx)
+
+                elif dt == EDataType.DT_Int:
+                    tx = NSpinBox(self)
+                    tx.valueChanged.connect(propInst.set)
+                    tx.setValue(int(propInst.get()))
+                    obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                    self._layout.addWidget(obj)
+
+                elif dt == EDataType.DT_Float:
+                    tx = NDoubleBox(self)
+                    tx.valueChanged.connect(propInst.set)
+                    tx.setValue(float(propInst.get()))
                     obj = NPropertyDisplay(self, prop); obj.addItem(tx)
                     self._layout.addWidget(obj)
 
@@ -150,16 +215,51 @@ class NPropertiesDialog(NWidget, QtWidgets.QDialog):
                     self._layout.addWidget(btn)
 
                 else:
-                    # TODO Add pure method objects logic here. For now we only handle attributes that reference a method and that have prop data.
-                    pass
+                    methData = getattr(propInst, EXPOSED_EXTRADATA, None)
+                    getter = GET_GETTER(self.nodeObj(), prop)
+                    typ = getattr(propInst, EXPOSEDPROPNAME, None)
+                    if methData and typ:
+                        dt = methData['dataType']
+                        if EPropType.PT_Input in typ:
+                            if dt == EDataType.DT_String:
+                                tx = NLineEdit(self)
+                                tx.textChanged.connect(propInst)
+                                if getter:
+                                    tx.setText(getter())
+                                obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                                self._layout.addWidget(obj)
+
+                            elif dt == EDataType.DT_Script:
+                                tx = NScriptEd(self)
+                                tx.sg_enterPressed_get.connect(propInst)
+                                if getter:
+                                    tx.setText(getter())
+                                self._layout.addWidget(tx)
+
+                            elif dt == EDataType.DT_Int:
+                                tx = NSpinBox(self)
+                                tx.valueChanged.connect(propInst)
+                                if getter:
+                                    tx.setValue(getter())
+                                obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                                self._layout.addWidget(obj)
+
+                            elif dt == EDataType.DT_Float:
+                                tx = NDoubleBox(self)
+                                tx.valueChanged.connect(propInst)
+                                if getter:
+                                    tx.setValue(getter())
+                                obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                                self._layout.addWidget(obj)
+
 
             elif len(propData) != 0:
                 pass
 
 
-class NCreationDialog(NWidget, QtWidgets.QWidget):
+class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
     def __init__(self, p, pos, **kwargs):
-        NWidget.__init__(self, p)
+        NWidgetBase.__init__(self, p)
         QtWidgets.QWidget.__init__(self, p)
         self.setObjectName("Object_spawner")
         self.setWindowModality(QtCore.Qt.ApplicationModal)
@@ -195,7 +295,7 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.lineInput = NTextEdit(self.verticalLayoutWidget)
+        self.lineInput = NLineEdit(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(1)
@@ -236,14 +336,14 @@ class NCreationDialog(NWidget, QtWidgets.QWidget):
             self.listWidget.addItem(newItem)
 
 
-class NGraphicsView(NWidget, QtWidgets.QGraphicsView):
+class NGraphicsView(NWidgetBase, QtWidgets.QGraphicsView):
     signal_KeyPressed = QtCore.Signal(str)
     sg_ViewportClicked = QtCore.Signal(QtCore.QEvent)
     sg_NodeDeleted = QtCore.Signal(str)
     sg_NodeDoubleClicked = QtCore.Signal(NObject)
 
     def __init__(self, parent):
-        NWidget.__init__(self, parent)
+        NWidgetBase.__init__(self, parent)
         QtWidgets.QGraphicsView.__init__(self, parent)
         self.setMouseTracking(True)
         self.gridVisToggle = True
@@ -737,21 +837,23 @@ class NGraphicsScene(QtWidgets.QGraphicsScene):
         Update the connections position.
         """
         for connection in [i for i in self.items() if isinstance(i, NConnection)]:
-            connection.target_point = connection.target.center()
-            connection.source_point = connection.source.center()
+            connection.target_point = connection.target.center() if connection.target else QPoint()
+            connection.source_point = connection.source.center() if connection.source else QPoint()
             connection.updatePath()
 
 
-class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
+class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
     sg_Moved = QtCore.Signal(QtWidgets.QWidget, QtCore.QPoint)
 
-    def __init__(self, name: str, baseNode: NObject = None):
+    def __init__(self, name: str, baseNode: Core.NFunctionBase = None):
 
         self._wrappedNode = None
         if baseNode:
             self._wrappedNode = baseNode  # Keep a hard ref to this object
+            baseNode.onClassChanged.bindFunction(self, 'onWrappedNodeChange')
+            baseNode.onAttributeChanged.bindFunction(self, 'onWrappedNodeAttrChange')
 
-        NWidget.__init__(self, None, baseNode.getName() if baseNode else "UNDEFINED")
+        NWidgetBase.__init__(self, None, baseNode.getName() if baseNode else "UNDEFINED")
         QtWidgets.QGraphicsItem.__init__(self)
 
         self._exposedAttributes = {}
@@ -776,6 +878,17 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
 
         print('spawned ui node, base: %s' % baseNode)
 
+    def onWrappedNodeChange(self):
+        print('detected wrapped node changed')
+        pass
+
+    def onWrappedNodeAttrChange(self, attr: str, state: EAttrChange, typ: EDataType):
+        if state == EAttrChange.AC_Removed:
+            self._deleteAttribute(self.attrs.index(attr))
+        elif state == EAttrChange.AC_Added:
+            self._internal_addAttr(attr, -1, True, True, typ)
+
+
     @property
     def height(self):
         """
@@ -798,7 +911,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
             if callable(item):
                 attr = getattr(item, EXPOSEDPROPNAME, None)
                 attrDetails = getattr(item, EXPOSED_EXTRADATA, None)
-                if attr and EPropType.PT_Readable in attr:
+                if attr and EPropType.PT_Readable in attr and EAttrType.AT_Blacklisted not in itemInfo:
                     assert attrDetails.get('dataType', None) is not None  # all properties must have a data type.
                     self._internal_addAttr(prop, -1, EPropType.PT_Output in attr or EPropType.PT_FuncDelegateOut in attr,
                                            EPropType.PT_FuncDelegateIn in attr or EPropType.PT_Input in attr, attrDetails['dataType'])
@@ -807,8 +920,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
 
             elif isinstance(item, Core.NDynamicAttr):
                 bNoWrite = EAttrType.AT_ReadOnly not in itemInfo; bNoRead = EAttrType.AT_WriteOnly not in itemInfo
-                self._internal_addAttr(prop, -1, bNoWrite, bNoRead, item.dataType())
-
+                self._internal_addAttr(prop, -1, bNoRead, bNoWrite, item.dataType())
 
     def _internal_addAttr(self, name, idx, bPlug, bSocket, dataType):
         """
@@ -835,6 +947,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
             print('Attribute creation aborted !')
             return
 
+        numAllowedc = -1 if dataType != EDataType.DT_Delegate else 1
         # self.attrPreset = preset
         plugInst = socketInst = None
         # Create a plug connection item.
@@ -844,7 +957,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
                                 index=self.attrCount,
                                 preset=None,
                                 dataType=dataType,
-                                maxConnections=-1)
+                                maxConnections=numAllowedc)
 
         # Create a socket connection item.
         if bSocket:
@@ -853,7 +966,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
                                     index=self.attrCount,
                                     preset=None,
                                     dataType=dataType,
-                                    maxConnections=-1)
+                                    maxConnections=1)
 
 
         self.attrCount += 1
@@ -869,6 +982,64 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
 
         # Update node height.
         self.update()
+
+    def _deleteAttribute(self, index):
+        """
+        Remove an attribute by reducing the node, removing the label
+        and the connection items.
+        :type  index: int.
+        :param index: The index of the attribute in the node.
+        """
+        name = self.attrs[index]
+
+        if self._exposedAttributes[name].getPlug():
+            for connection in self._exposedAttributes[name].getPlug()().connections:
+                self._exposedAttributes[name].getPlug()().disconnect(connection)
+
+            self.scene().removeItem(self._exposedAttributes[name].getPlug()())
+
+        # Remove plug and its connections.
+        if self._exposedAttributes[name].getSocket():
+            for connection in self._exposedAttributes[name].getSocket()().connections:
+                self._exposedAttributes[name].getPlug().disconnect(connection)
+
+            self.scene().removeItem(self._exposedAttributes[name].getSocket()())
+
+        # Reduce node height.
+        if self.attrCount > 0:
+            self.attrCount -= 1
+
+        # Remove attribute from node.
+        if name in self.attrs:
+            self.attrs.remove(name)
+
+        del self._exposedAttributes[name]
+
+        self.update()
+
+    def _remove(self):
+        """
+        Remove this node instance from the scene.
+        Make sure that all the connections to this node are also removed
+        in the process
+        """
+        print(self.scene().nodes)
+        self.scene().nodes.pop(self.name)
+
+        # Remove all sockets connections.
+        for socket in self.sockets.values():
+            while len(socket.connections) > 0:
+                socket.connections[0]._remove()
+
+        # Remove all plugs connections.
+        for plug in self.plugs.values():
+            while len(plug.connections) > 0:
+                plug.connections[0]._remove()
+
+        # Remove node.
+        scene = self.scene()
+        scene.removeItem(self)
+        scene.update()
 
     def _createStyle(self, config=None):
         """
@@ -1025,8 +1196,7 @@ class NUiNodeObject(NWidget, QtWidgets.QGraphicsItem):
             return self._pen
 
     def remove(self):
-        # @TODO Allow node deletion.
-        pass
+        self._remove()
 
     def getUUID(self):
         return self._wrappedNode.getUUID()
@@ -1108,7 +1278,7 @@ class NVisualAttribute(NObject):
     in UI mode.
     """
     def __init__(self, owningObj, name, dataType, inPlug=None, inSocket=None, **extraData):
-        super(NVisualAttribute, self).__init__(name=name, owner=owningObj)
+        super(NVisualAttribute, self).__init__(name=name, owner=owningObj, noClassRegister=True)
 
         self._plug = inPlug
         self._socket = inSocket
@@ -1144,6 +1314,7 @@ class NVisualAttribute(NObject):
 
     def dataType(self):
         return self._dataType
+
 
 
 class SlotItem(QtWidgets.QGraphicsItem):
@@ -1194,7 +1365,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
         self.connections = list()
         self.maxConnections = maxConnections
 
-    def accepts(self, slot_item):
+    def accepts(self, slot_item: QtWidgets.QGraphicsItem):
         """
         Only accepts plug items that belong to other nodes, and only if the max connections count is not reached yet.
         """
@@ -1209,11 +1380,11 @@ class SlotItem(QtWidgets.QGraphicsItem):
             return False
 
         # no more than maxConnections
-        if self.maxConnections > 0 and len(self.connected_slots) >= self.maxConnections:
+        if len(self.connected_slots) >= self.maxConnections and self.maxConnections > 0:
             return False
 
-        # no connection with different types
-        if slot_item.dataType != self.dataType:
+        # no connection with different types unless marked as NVariant
+        if slot_item.dataType != self.dataType and self.dataType != EDataType.DT_Variant:
             return False
 
         # otherwise, all fine.
@@ -1293,18 +1464,37 @@ class SlotItem(QtWidgets.QGraphicsItem):
                 self.connect(target, self.newConnection)
                 target.connect(self, self.newConnection)
 
-                # Perform the logical connection.
+                # Perform the logical connection. #LOGICAL_CONNECTION
                 from_, to = (self, target) if self.slotType == 'plug' else (target, self)
                 node = from_.owner.node()
                 prop = getattr(node, from_.attribute)
                 if callable(prop):
                     attr = getattr(prop, EXPOSEDPROPNAME, None); attrDetails = getattr(prop, EXPOSED_EXTRADATA, None)
                     assert attr and attrDetails
-                    if attrDetails['dataType'] == EDataType.DT_Delegate:
+                    if 1:  # attrDetails['dataType'] == EDataType.DT_Delegate:
                         delegate = node.__PropHooks__.get(from_.attribute, None)
                         assert delegate, "Delegate for %s.%s not registered." % (node.getName(), self.attribute)
+
                         bm = delegate.bindFunction(to.owner.node(), to.attribute)
-                        self.newConnection.funcConnection = Core.NWeakRef(bm)
+                        if bm:
+                            self.newConnection.funcConnections.append(Core.NWeakRef(bm))
+                        else:
+                            print("can't connect to that..")
+                            self.newConnection._remove()
+                            # @TODO make it so that the delegate hook is automatically created. For now it needs to be predefined in the owning class.
+
+
+
+                elif isinstance(prop, Core.NDynamicAttr):
+                    bml = prop.connect(to.owner.node(), to.attribute)
+                    if len(bml) != 0:
+                        self.newConnection.funcConnections.extend([Core.NWeakRef(x) for x in bml])
+                    else:
+                        print("can't connect to that..")
+                        self.newConnection._remove()
+
+                else:
+                    self.newConnection._remove()
 
 
                 self.newConnection.updatePath()
@@ -1335,8 +1525,10 @@ class SlotItem(QtWidgets.QGraphicsItem):
         if nodzInst.drawingConnection:
             if self.parentItem() == nodzInst.currentHoveredNode:
                 painter.setBrush(QtGui.QColor(0, 0, 175)) # @TODO Add from config here too. Currently blue thing
-                if self.slotType == nodzInst.sourceSlot.slotType or (self.slotType != nodzInst.sourceSlot.slotType and self.dataType != nodzInst.sourceSlot.dataType):
-                    painter.setBrush(QtGui.QColor(128,36,36))
+                bVariant = self.dataType == EDataType.DT_Variant or nodzInst.sourceSlot.dataType == EDataType.DT_Variant
+                if self.slotType == nodzInst.sourceSlot.slotType or (self.slotType != nodzInst.sourceSlot.slotType and
+                                                                     self.dataType != nodzInst.sourceSlot.dataType) and not bVariant:
+                    painter.setBrush(QtGui.QColor(128, 36, 36)) # not good
                 else:
                     _penValid = QtGui.QPen()
                     _penValid.setStyle(QtCore.Qt.SolidLine)
@@ -1458,6 +1650,12 @@ class PlugItem(SlotItem):
         if connection.socketItem in self.connected_slots:
             self.connected_slots.remove(connection.socketItem)
         # Remove connection
+        for cwf in connection.funcConnections:
+            if cwf():
+                cwf().kill()
+
+        connection.funcConnections = []
+
         self.connections.remove(connection)
 
 
@@ -1553,8 +1751,11 @@ class SocketItem(SlotItem):
         if connection.plugItem in self.connected_slots:
             self.connected_slots.remove(connection.plugItem)
         # Remove connections
-        if connection.funcConnection():
-            connection.funcConnection().kill()
+        for cwf in connection.funcConnections:
+            if cwf():
+                cwf().kill()
+
+        connection.funcConnections
 
         self.connections.remove(connection)
 
@@ -1587,7 +1788,7 @@ class NConnection(QtWidgets.QGraphicsPathItem):
         self.plugNode = None
         self.plugAttr = None
 
-        self.funcConnection = None
+        self.funcConnections = []
 
         self.source_point = source_point
         self.target_point = target_point

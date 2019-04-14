@@ -17,13 +17,19 @@ def findClass(typ):
 
 def addInstance(obj):
     global classInstances
-    print('registering new object: %s' % obj)
+    print('registering new object: %s, name: %s' % (obj, obj.getName().toString()))
     classInstances[obj.getUUID()] = obj
 
 
 def getInstance(uuid):
     global classInstances
     return classInstances.get(uuid, None)
+
+def getInstanceByName(name: str):
+    global classInstances
+    for v in classInstances.values():
+        if v.getName().toString() == name:
+            return v
 
 
 def swapInstanceKey(olduuid):

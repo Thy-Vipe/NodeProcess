@@ -4,10 +4,17 @@ from Nodes.CoreUtils import *
 
 #  ========================================== Class generators ==========================================
 
+class AttrType:
+    """
+    Dummy for visibility
+    """
+    pass
+
 
 def CLASS_BODY(ClassObj, **kwargs):
     setattr(ClassObj, '__PropFlags__', {})
     setattr(ClassObj, '__PropHooks__', {})
+    setattr(ClassObj, '__PropGetters__', {})
     g_a.addToGlobal(ClassObj.__class__.__name__, ClassObj.__class__)
 
 
@@ -20,7 +27,7 @@ def CLASS_PROP_BODY(ClassObj):
     g_a.addToGlobal(ClassObj.__class__.__name__, ClassObj.__class__)
 
 
-def NATTR(ClassObj, PropName, *args):
+def NATTR(ClassObj, PropName, *args: AttrType):
     if hasattr(ClassObj, '__PropFlags__'):
         ClassObj.__PropFlags__[PropName] = args
     else:
@@ -40,6 +47,33 @@ def REGISTER_HOOK(ClassObj, PropName, hook):
         raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
 
 
+def REGISTER_GETTER(ClassObj, PropName: str, Getter: classmethod):
+    """
+    Bind a getter for a function that sets values. Can be used to recover previously set data.
+    :param ClassObj: The owning class
+    :param PropName: the owning property to bind a getter to
+    :param Getter:  the property to read value from.
+    :type Getter: method or classmethod
+    """
+    if hasattr(ClassObj, '__PropGetters__'):
+        ClassObj.__PropGetters__[PropName] = Getter
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
+
+def GET_GETTER(ClassObj, PropName):
+    if hasattr(ClassObj, '__PropGetters__'):
+        return ClassObj.__PropGetters__.get(PropName, None)
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
+
+def GET_HOOK(ClassObj, PropName: str):
+    if hasattr(ClassObj, '__PropHooks__'):
+        return ClassObj.__PropHooks__[PropName]
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
 #  ========================================== Function decorators ==========================================
 
 
@@ -53,6 +87,7 @@ class EAttrType:
     AT_SingleCastDelegate = 5
     AT_Getter = 6
     AT_kSlot = 7
+    AT_Blacklisted = 8
 
 
 class EPropType:
@@ -74,6 +109,7 @@ class EDataType:
     DT_Struct = 0x4e537472756374
     DT_Point = 0x4e506f696e74
     DT_Vector = 0x4e566563746f72
+    DT_Variant = 0x4e56617269616e74
 
 
 def Property(*PropTypes: EPropType, **kwargs):

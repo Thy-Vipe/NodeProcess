@@ -21,11 +21,40 @@ DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
              EDataType.DT_String: (229, 45, 225),
              EDataType.DT_Struct: (35, 44, 170),
              EDataType.DT_Point: (15, 78, 224),
-             EDataType.DT_Vector: (224, 185, 14)
+             EDataType.DT_Vector: (224, 185, 14),
+             EDataType.DT_Script: (50, 194, 242),
+             EDataType.DT_Variant: (173, 173, 173)
              }
+
+DATATYPES_STR = {"str": EDataType.DT_String,
+                 "int": EDataType.DT_Int,
+                 "float": EDataType.DT_Float
+                 }
+
+
+class EAnchorType:
+    """
+    Enum to handle anchor types.
+    """
+    RelativeRelative = 0
+    FixedRelative = 1
+    RelativeFixed = 2
+    FixedFixed = 3
+
+
+class EAttrChange:
+    """
+    Enum for attribute change events.
+    """
+    AC_Added = 0
+    AC_Removed = 1
 
 
 class EFuncType:
+    """
+    Enum for func types. They can be either Callable, meaning they need an execution wire (white),
+    or they can be Pure, meaning they're called as needed and do not require an execution wire.
+    """
     # Used for heavy operations that require a certain amount of processing.
     FT_Callable = 0
     # Used if the logic behind the function object is simple / quick to execute
@@ -173,7 +202,7 @@ class NArchive(NProperty):
 
         # print(byteInfo)
 
-        # Write header of this file at the end, that way we know where the header exactly begins.
+        # Write header of this file at the end, that way we know where the 'block' exactly begins.
         binLen = len(byteInfo)
         buff = '%dI' % binLen
         # write position data from list
@@ -328,12 +357,24 @@ class NMutable(NProperty):
     def __reader__(self, data):
         self._data = data[0]
 
+    def __repr__(self):
+        return str(self._data)
+
+    def __str__(self):
+        return str(self.get())
+
+    def __int__(self):
+        return int(self.get())
+
+    def __float__(self):
+        return float(self.get())
+
 
 class NInt(NMutable):
     """
     A simple mutable integer. Is serializable.
     """
-    def __init__(self, v: int):
+    def __init__(self, v: int = 0):
         super(NInt, self).__init__(v, 'i')
 
 
@@ -341,8 +382,31 @@ class NFloat(NMutable):
     """
     A simple mutable float. Is serializable.
     """
-    def __init__(self, v: float):
-        super(NMutable, self).__init__(v, 'd')
+    def __init__(self, v: float = 0.0):
+        super(NFloat, self).__init__(v, 'd')
+
+    def __float__(self):
+        return self.get()
+
+
+class NVariant(NMutable):
+    def __init__(self, v=None):
+        super(NVariant, self).__init__(v, '')
+
+        self._type = EDataType.DT_Variant
+
+    def set(self, v):
+        super(NVariant, self).set(v)
+
+        for k, val in DATACLASSES.items():
+            if type(v) is val:
+                self._type = k
+                return
+
+        raise TypeError("%s is not supported by NVariant." % v.__class__.__name__)
+
+    def type_(self):
+        return self._type
 
 
 class NStatus(NMutable):
@@ -355,6 +419,46 @@ class NStatus(NMutable):
 
     def isError(self):
         return self._data != EStatus.kSuccess and not self._data == EStatus.Default
+
+
+class NScript(object):
+    """
+    Class representing a dynamic script to be executed with the python interpreter.
+    It is fully serializable as string, but does not preserve the class references,
+    and therefore needs to be spawned non-dynamically with the expected globals, locals and extras.
+    """
+    def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
+        self._script = script
+        self._globals = global_vars if global_vars else {}
+        self._locals = local_vars if local_vars else {}
+
+        for k, v in extraVars.items():
+            self._locals[k] = v
+
+    def exec(self):
+        exec(self._script, self._globals, self._locals)
+
+    def __archive__(self, Ar):
+        Ar << NString(self._script)
+
+    def __reader__(self, data):
+        new = NString()
+        new.__reader__(data)
+        self._script = new.get()
+
+    def setCode(self, code: str):
+        self._script = code
+
+    def getCode(self):
+        return self._script
+
+    def addLocal(self, item: dict):
+        for k, v in item.items():
+            self._locals[k] = v
+
+    def removeLocal(self, item: list):
+        for k in item:
+            del self._locals[k]
 
 
 class NArray(collections.UserList, NProperty):
@@ -481,7 +585,7 @@ class NPoint2D(NProperty):
     """
     Npoint2D: Represents a point in 2D space.
     """
-    def __init__(self, x=0, y=0, bForceInt=False):
+    def __init__(self, x=0.0, y=0.0, bForceInt=False):
         super(NPoint2D, self).__init__()
 
         self.x = x
@@ -512,6 +616,16 @@ class NPoint2D(NProperty):
             return NPoint2D(self.x * pt.x, self.y * pt.y, self.__IsInt)
         elif isinstance(pt, (float, int)):
             return NPoint2D(self.x * pt, self.y * pt, self.__IsInt)
+        else:
+            raise TypeError
+
+    def __truediv__(self, other):
+        if isinstance(other, NPoint2D):
+            if not self.__IsInt:
+                return NPoint2D(float(self.x) / float(other.x), float(self.y) / float(other.y), self.__IsInt)
+            else:
+                return NPoint2D(self.x / other.x, self.y / other.y, self.__IsInt)
+        # ...
         else:
             raise TypeError
 
@@ -810,3 +924,16 @@ class NVector(NPoint):
             z  # Z
         )
 
+
+DATACLASSES = {EDataType.DT_Delegate: None,
+               EDataType.DT_Array: NArray,
+               EDataType.DT_Dict: dict,
+               EDataType.DT_Float: NFloat,
+               EDataType.DT_Int: NInt,
+               EDataType.DT_String: NString,
+               EDataType.DT_Struct: NVariant,
+               EDataType.DT_Point: NPoint,
+               EDataType.DT_Vector: NVector,
+               EDataType.DT_Script: NScript,
+               EDataType.DT_Variant: NVariant
+               }

@@ -22,6 +22,11 @@ class APPLICATION(Core.NWorld):
         g_a.registerFunction(Core.NFunctionBase)
         g_a.registerFunction(Core.Tester)
         g_a.registerFunction(Core.Print)
+        g_a.registerFunction(Core.PyScript)
+        g_a.registerFunction(Core.ForLoop)
+        g_a.registerFunction(Core.ForEachLoop)
+        g_a.registerFunction(Core.Reroute)
+        g_a.registerFunction(Core.ToString)
         # @TODO finish adding other registerable functions.
 
     def spawnInterface(self):
@@ -36,7 +41,7 @@ if __name__ == "__main__":
     MAIN_THREAD = NThreading.NThread('MAIN_THREAD')
     g = globals()
     g['Main_thread'] = MAIN_THREAD
-    script = NThreading.NScript("app_world = Core.NWorld();app = QtWidgets.QApplication(sys.argv);app_obj = APPLICATION();app_obj.spawnInterface();sys.exit(app.exec_())", g, locals())
+    script = NThreading.NScript("app = QtWidgets.QApplication(sys.argv);app_obj = APPLICATION();app_obj.spawnInterface();sys.exit(app.exec_())", g, locals())
     MAIN_THREAD.asyncTask(script)
     MAIN_THREAD.start()
 

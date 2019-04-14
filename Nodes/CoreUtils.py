@@ -1,4 +1,4 @@
-import inspect
+import inspect, warnings
 
 from PySide2 import QtCore
 
@@ -41,3 +41,10 @@ class UCoreUtils:
         bb = QtCore.QRectF(bb)
 
         return bb
+
+    @staticmethod
+    def findBlock(s: str, frm: int = 0, dlmIn='{', dlmOut='}'):
+        i = s.find(dlmIn, frm) + 1
+        j = s.find(dlmOut, frm)
+
+        return [i, j, s[i:j]]

@@ -103,12 +103,17 @@ class Delegate(NObject):
             name = args[0].__name__
             new = BoundMethod(self, self.getOwner(), owningClass, name, args[0])
             self._functions.append(new)
-        elif isinstance(args[0], NObject):
-            funcRef = getattr(args[0], args[1], None)
 
+        elif not isinstance(args[0], str):
+            funcRef = getattr(args[0], args[1], None)
             if funcRef is not None and callable(funcRef):
                 new = BoundMethod(self, self.getOwner(), args[0], args[1], funcRef)
                 self._functions.append(new)
+
+            elif funcRef and hasattr(funcRef, 'set'):
+                new = BoundMethod(self, self.getOwner(), args[0], args[1], funcRef.set)
+                self._functions.append(new)
+
             else:
                 bError = True
         else:
@@ -116,6 +121,9 @@ class Delegate(NObject):
 
         if bError:
             raise TypeError("{input} is not a function type or NObject reference, or the passed-in function name is not valid.".format(input=str(args[0])))
+
+        if len(args) == 3 and isinstance(args[2], NStatus):
+            args[2].set(EStatus.kSuccess if not bError else EStatus.kError)
 
         return new
 
@@ -126,11 +134,9 @@ class Delegate(NObject):
         :return: No return value.
         """
         bError = False
-        print("haaaa")
         BoundFunc = self.findFunc(*args) if not isinstance(args[0], BoundMethod) else args[0]
-        if BoundFunc is not None:
+        if BoundFunc:
             self._functions.remove(BoundFunc)
-            print(self._functions)
         else:
             bError = True
 
@@ -193,7 +199,7 @@ class DelegateSingle(Delegate):
         if self._functions.__len__() == 0:
             return super(DelegateSingle, self).bindFunction(*args)
         else:
-            warnings.warn("{0} is already bound to a method.".format(str(self)))
+            warnings.warn("{0}, named {1} is already bound to a method.".format(str(self), self.getName().toString()))
 
     def removeFunction(self, *args):
         """
@@ -251,4 +257,3 @@ class CollectorMulticast(Delegate):
             del item
 
         return results
-

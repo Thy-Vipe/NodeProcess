@@ -25,7 +25,7 @@ class MainWindowBuild(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1118, 676)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget = CoreNWindows.NWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(0, 0, 271, 641))
