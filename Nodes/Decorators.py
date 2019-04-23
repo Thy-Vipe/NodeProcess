@@ -27,9 +27,11 @@ def CLASS_PROP_BODY(ClassObj):
     g_a.addToGlobal(ClassObj.__class__.__name__, ClassObj.__class__)
 
 
-def NATTR(ClassObj, PropName, *args: AttrType):
+def NATTR(ClassObj, PropName, *args: AttrType, DESC=''):
     if hasattr(ClassObj, '__PropFlags__'):
-        ClassObj.__PropFlags__[PropName] = args
+        data = list(args)
+        data.insert(0, DESC)
+        ClassObj.__PropFlags__[PropName] = tuple(data)
     else:
         raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
 
@@ -110,6 +112,8 @@ class EDataType:
     DT_Point = 0x4e506f696e74
     DT_Vector = 0x4e566563746f72
     DT_Variant = 0x4e56617269616e74
+    DT_Iterable = 0x4974657261626c65
+    DT_Bool = 0x426f6f6c
 
 
 def Property(*PropTypes: EPropType, **kwargs):
@@ -124,6 +128,7 @@ def Property(*PropTypes: EPropType, **kwargs):
         Values.append(EPropType.PT_Readable)
         func.propTypes = tuple(Values)
         func.extra_data = kwargs
+        func.propertyDelegate = None  # Can be used when dynamically connected, by spawning a dynamic delegate and referencing it here.
         return func
 
     return register_wrapper

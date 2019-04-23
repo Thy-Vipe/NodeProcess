@@ -15,6 +15,9 @@ class NWeakRef(weakref.ref):
         for k, v in annotations.items():
             setattr(self, k, v)
 
+    def isValid(self):
+        return self() is not None
+
 
 class NWeakMethod(weakref.WeakMethod):
     def __init__(self, *args, **kwargs):

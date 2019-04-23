@@ -23,10 +23,12 @@ class APPLICATION(Core.NWorld):
         g_a.registerFunction(Core.Tester)
         g_a.registerFunction(Core.Print)
         g_a.registerFunction(Core.PyScript)
+        g_a.registerFunction(Core.BatchScript)
         g_a.registerFunction(Core.ForLoop)
         g_a.registerFunction(Core.ForEachLoop)
         g_a.registerFunction(Core.Reroute)
         g_a.registerFunction(Core.ToString)
+        g_a.registerFunction(Core.ReadDir)
         # @TODO finish adding other registerable functions.
 
     def spawnInterface(self):

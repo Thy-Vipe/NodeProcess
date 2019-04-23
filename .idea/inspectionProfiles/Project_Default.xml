@@ -41,6 +41,7 @@
           <option value="Windows.CoreNWindows.NWidget.getParent" />
           <option value="Nodes.CoreObject.NObject.__PropHooks__" />
           <option value="Windows.CoreNWindows.NUiNodeObject" />
+          <option value="Nodes.Core.NFunctionBase.__PropHooks__" />
         </list>
       </option>
     </inspection_tool>

@@ -3,7 +3,7 @@ from __future__ import division
 from functools import reduce
 import math
 from numbers import Real
-import array, struct, collections
+import array, struct, collections, os, subprocess
 
 from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA
@@ -23,7 +23,9 @@ DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
              EDataType.DT_Point: (15, 78, 224),
              EDataType.DT_Vector: (224, 185, 14),
              EDataType.DT_Script: (50, 194, 242),
-             EDataType.DT_Variant: (173, 173, 173)
+             EDataType.DT_Variant: (173, 173, 173),
+             EDataType.DT_Iterable: (173, 173, 173),
+             EDataType.DT_Bool: (200, 10, 0)
              }
 
 DATATYPES_STR = {"str": EDataType.DT_String,
@@ -428,7 +430,8 @@ class NScript(object):
     and therefore needs to be spawned non-dynamically with the expected globals, locals and extras.
     """
     def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
-        self._script = script
+        self._script = ''
+        self.setCode(script)
         self._globals = global_vars if global_vars else {}
         self._locals = local_vars if local_vars else {}
 
@@ -459,6 +462,28 @@ class NScript(object):
     def removeLocal(self, item: list):
         for k in item:
             del self._locals[k]
+
+
+class NBatchScript(NScript):
+    def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
+        self._tempPath = os.environ['tmp']
+        self._scriptdir = '%s\\tmpscript_%d.ts.bat' % (self._tempPath, id(self))
+
+        super(NBatchScript, self).__init__(script, global_vars, local_vars, **extraVars)
+
+    def exec(self):
+        r = subprocess.check_call(self._scriptdir)
+        print("Batch script <%d> finished with exit code %s." % (id(self), r))
+
+    def setCode(self, code: str):
+        with open(self._scriptdir, 'w') as f:
+            f.write(code)
+            f.close()
+
+        self._script = code
+
+    def __del__(self):
+        os.remove(self._scriptdir)
 
 
 class NArray(collections.UserList, NProperty):
@@ -576,6 +601,9 @@ class NString(collections.UserString, NProperty):
 
     def get(self):
         return self.data
+
+    def set(self, string: str):
+        self.data.replace(self.data, string)
 
     def toString(self):
         return str(self)
@@ -935,5 +963,7 @@ DATACLASSES = {EDataType.DT_Delegate: None,
                EDataType.DT_Point: NPoint,
                EDataType.DT_Vector: NVector,
                EDataType.DT_Script: NScript,
-               EDataType.DT_Variant: NVariant
+               EDataType.DT_Variant: NVariant,
+               EDataType.DT_Iterable: list,
+               EDataType.DT_Bool: bool
                }

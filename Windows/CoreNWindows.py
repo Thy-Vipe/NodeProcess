@@ -1651,7 +1651,7 @@ class PlugItem(SlotItem):
             self.connected_slots.remove(connection.socketItem)
         # Remove connection
         for cwf in connection.funcConnections:
-            if cwf():
+            if cwf.isValid():
                 cwf().kill()
 
         connection.funcConnections = []
@@ -1752,10 +1752,9 @@ class SocketItem(SlotItem):
             self.connected_slots.remove(connection.plugItem)
         # Remove connections
         for cwf in connection.funcConnections:
-            if cwf():
+            if cwf.isValid():
                 cwf().kill()
 
-        connection.funcConnections
 
         self.connections.remove(connection)
 

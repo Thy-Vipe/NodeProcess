@@ -42,7 +42,7 @@ class BoundMethod(object):
         return self._Owner()
 
     def getDelegate(self):
-        return self._owningDelegate
+        return self._owningDelegate()
 
     def kill(self):
         """

@@ -6,6 +6,7 @@ from Nodes.CoreProperties import *
 from Nodes.CoreObject import *
 
 
+
 class NWorld(NObject):
     """
         This is the main object that is ultimately the base of every logic going on in this software.
@@ -203,6 +204,7 @@ class PyScript(NFunctionBase):
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
+        self.script(self._rawScript)  # re-evaluate the script JIC
         self._script.exec()
         self.then()
 
@@ -254,11 +256,31 @@ class PyScript(NFunctionBase):
             self.onAttributeChanged.execute(at, EAttrChange.AC_Added, typ)
 
         # finally clean up the actual script:
-        cleanScript = self._rawScript
-        for block in allblocks:
-            cleanScript = cleanScript.replace(cleanScript[block[0]-1:block[1]+1], "%s.get()" % block[2].split(':')[0])
+        cleanScript = self._cleanupStr(self._rawScript, allblocks)
 
         self._script.setCode(cleanScript); print(cleanScript)
+
+    def _cleanupStr(self, rawScript, blocks):
+        cleanScript = self._rawScript
+        for block in blocks:
+            cleanScript = cleanScript.replace(cleanScript[block[0] - 1:block[1] + 1], "%s.get()" % block[2].split(':')[0])
+
+        return cleanScript
+
+
+class BatchScript(PyScript):
+    def __init__(self, funcName):
+        super(BatchScript, self).__init__(funcName)
+
+        self._script = NBatchScript('')
+
+    def _cleanupStr(self, rawScript, blocks):
+        cleanScript = self._rawScript
+        for block in blocks:
+            v = getattr(self, block[2].split(':')[0]).get()
+            cleanScript = cleanScript.replace(cleanScript[block[0] - 1:block[1] + 1], "%s" % str(v))
+
+        return cleanScript
 
 
 class ForLoop(NFunctionBase):
@@ -297,23 +319,29 @@ class ForEachLoop(NFunctionBase):
         self._counter = []
 
         NATTR(self, 'value', EAttrType.AT_ReadOnly)
-        self.value = NDynamicAttr('value', EDataType.DT_Variant, None, self)
+        self.value = NDynamicAttr('value', EDataType.DT_Iterable, None, self)
+
+        NATTR(self, 'index', EAttrType.AT_ReadOnly)
+        self.index = NDynamicAttr('index', EDataType.DT_Int, NInt(0), self, noInput=True)
 
         REGISTER_HOOK(self, 'loop', self._loopDelegate)
 
     @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
-    def loop(self, v):
+    def loop(self):
         self._loopDelegate.execute()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Variant)
-    def iterable(self, it: (list, tuple)):
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Iterable)
+    def iterable(self, it: (list, tuple, collections.UserList)):
         self._counter = map(lambda x: NVariant(x), it)
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
+        idx = 0
         for item in self._counter:
             self.value.set(item)
+            self.index.set(idx)
             self.loop()
+            idx += 1
 
 
 class Reroute(NFunctionBase):
@@ -333,4 +361,50 @@ class ToString(NFunctionBase):
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Variant)
     def input(self, v):
         self.result.set(str(v))
+
+
+class ReadDir(NFunctionBase):
+    def __init__(self, funcName):
+        super(ReadDir, self).__init__(funcName, None, EFuncType.FT_Callable)
+
+        self._bRecursive = False
+        self._readDirPath = ''
+
+        NATTR(self, 'result', EAttrType.AT_ReadOnly, DESC="The output, an iterable of strings representing full path to a file.")
+        self.result = NDynamicAttr('result', EDataType.DT_Iterable, [], self, noInput=True)
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
+    def isRecursive(self, v: bool):
+        """
+        When true, find all sub-folders' files from the provided directory. It can be a slow operation.
+        """
+        self._bRecursive = bool(v)
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_String)
+    def path(self, p: (str, NString)):
+        """
+        The full path to a directory to read from.
+        """
+        self._readDirPath = p
+
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    def execute(self):
+        self.result.set(self.goThroughDir(self._readDirPath))
+        self.then()
+
+    def goThroughDir(self, path):
+        p = os.listdir(path)
+        files = []
+        for item in p:
+            fp = "%s\\%s" % (path, item)  # Parse the full path for the current item.
+            # Check if the item we're going through is a directory or a file.
+            if os.path.isfile(fp):
+                files.append(fp)
+
+            elif self._bRecursive and os.path.isdir(fp):
+                files.extend(self.goThroughDir(fp))
+
+        return files
+
+
 
