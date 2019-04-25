@@ -48,3 +48,19 @@ class UCoreUtils:
         j = s.find(dlmOut, frm)
 
         return [i, j, s[i:j]]
+
+    @staticmethod
+    def checkBases(cls, stype, itMax=10):
+        if isinstance(cls, type):
+            if stype in cls.__bases__:
+                return True
+
+            else:
+                for base in cls.__bases__:
+                    if stype in base.__bases__:
+                        return True
+                    else:
+                        itMax -= 1
+                        return UCoreUtils.checkBases(base, stype, itMax)
+        else:
+            return False

@@ -68,6 +68,7 @@ class NDynamicAttr(NObject):
         NATTR(self, '_value', EAttrType.AT_Serializable)
         self._value = self.check(initialValue)
 
+        NATTR(self, '_valueChanged', EAttrType.AT_Serializable); NATTR(self, '_plugDelegate', EAttrType.AT_Serializable)
         self._valueChanged = self._plugDelegate = None
 
         self._valueChanged = DelegateMulticast("%s_ValueChangedDelegate" % self.getName(), self)

@@ -51,12 +51,12 @@ class PyScript(NFunctionBase):
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
         if isinstance(self._script, NBatchScript):
-            self.script(self._rawScript)  # re-evaluate the script if type is batch script, to parse the proper data.
+            self.updateCode()  # re-evaluate the script if type is batch script, to parse the proper data.
         self._script.exec()
         self.then()
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Script)
-    def script(self, string):
+    def script(self, string: (str, NScript)):
         assert isinstance(string, (str, NScript)), "input is not str or NScript. Input is %s" % string.__class__.__name__
 
         if isinstance(string, NScript):

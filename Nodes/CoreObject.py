@@ -123,6 +123,9 @@ class NObject(object):
                 if EAttrType.AT_Serializable in __propFlags:
                     obj = getattr(self, prop)
                     val = values[idx] if not hasattr(values[idx], 'decode') else values[idx].decode()
+
+                    assert obj, "Error: %s.%s is not properly initialized, but was serialized previously." % (self.__class__.__name__, prop)
+
                     if hasattr(obj, '__reader__'):
                         # print(prop, val)
                         obj.__reader__(val)

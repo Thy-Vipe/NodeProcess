@@ -56,8 +56,8 @@ class BoundMethod(object):
 
     def __archive__(self, Ar):
         # print('BOUND METHOD OBJECTS', self._Owner, self._ObjectRef, self._owningDelegate)
-        ownerID = self._Owner().getUUID() if self._Owner else NString("None")
-        ObjectID = self._ObjectRef().getUUID() if self._ObjectRef else NString("None")
+        ownerID = self._Owner().getUUID() if self._Owner and self._Owner.isValid() else NString("None")
+        ObjectID = self._ObjectRef().getUUID() if self._ObjectRef and self._ObjectRef.isValid() else NString("None")
         Ar << ownerID
         Ar << ObjectID
         Ar << self._owningDelegate().getUUID()

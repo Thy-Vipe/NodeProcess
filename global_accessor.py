@@ -6,6 +6,7 @@ ActiveClasses = {}
 classInstances = {}
 functionClasses = {}
 
+
 def addToGlobal(typ, classRef):
     global ActiveClasses
     if typ not in ActiveClasses.keys():
@@ -36,8 +37,6 @@ def killInstance(uuid):
 
     refs = mh.getReferrers(obj)
     mh.clearReferences(refs)
-
-
 
 
 def getInstanceByName(name: str):

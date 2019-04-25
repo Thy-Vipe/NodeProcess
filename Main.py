@@ -1,8 +1,7 @@
 import sys, os
-from PySide2 import QtCore, QtGui, QtWidgets
 from Windows import NWindows as Win
 from Nodes import FuncNodes as funcs
-from Nodes import Core
+from Nodes import Core, CoreUtils
 from NThreads import NThreading
 import global_accessor as g_a
 import threading
@@ -21,24 +20,12 @@ class APPLICATION(Core.NWorld):
     @staticmethod
     def registerFunctions():
         for k, cls in funcs.__dict__.items():
-            if APPLICATION.checkBases(cls, Core.NFunctionBase):
+            if CoreUtils.UCoreUtils.checkBases(cls, Core.NFunctionBase):
                 g_a.registerFunction(cls)
 
-    @staticmethod
-    def checkBases(cls, stype, itMax=10):
-        if isinstance(cls, type):
-            if stype in cls.__bases__:
-                return True
-
-            else:
-                for base in cls.__bases__:
-                    if stype in base.__bases__:
-                        return True
-                    else:
-                        itMax -= 1
-                        return APPLICATION.checkBases(base, stype, itMax)
-        else:
-            return False
+    @property
+    def path(self):
+        return os.path.realpath(os.path.dirname(__file__))
 
 
     def spawnInterface(self):
@@ -46,7 +33,6 @@ class APPLICATION(Core.NWorld):
         self._setGraph(self._WindowReference.graphicsView)
         self._WindowReference.show()
         print("Spawning interface, thread ID: %s" % threading.get_ident())
-
 
 
 if __name__ == "__main__":
