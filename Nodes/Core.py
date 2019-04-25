@@ -118,10 +118,15 @@ class NDynamicAttr(NObject):
         if not o:
             return DATACLASSES[self._dataType]()
 
+        if self._dataType == EDataType.DT_Variant:
+            return o
+
         if not isinstance(o, DATACLASSES[self._dataType]):
-            return DATACLASSES[self._dataType](o)
+            obj = DATACLASSES[self._dataType](o)
+            return obj
         else:
             return o
+
 
 class NFunctionBase(NObject):
     def __init__(self, funcName, Owner=None, FuncType=EFuncType.FT_Callable):
@@ -168,7 +173,9 @@ class Tester(NFunctionBase):
         NATTR(self, 'then', EAttrType.AT_kSlot)  # Mark this method as a slot for an execute button.
 
         # execute not used for Tester.
-        delattr(NFunctionBase, 'execute')
+
+    def execute(self):
+        pass
 
 
 class Print(NFunctionBase):
@@ -195,6 +202,7 @@ class PyScript(NFunctionBase):
         loc = {'this': self}
         self._script = NScript('', glob, loc)
         self._rawScript = ''
+        self._blocks = []
 
         REGISTER_GETTER(self, 'script', self.getRawStr)
 
@@ -204,7 +212,8 @@ class PyScript(NFunctionBase):
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
-        self.script(self._rawScript)  # re-evaluate the script JIC
+        if isinstance(self._script, NBatchScript):
+            self.script(self._rawScript)  # re-evaluate the script if type is batch script, to parse the proper data.
         self._script.exec()
         self.then()
 
@@ -225,14 +234,14 @@ class PyScript(NFunctionBase):
         j = code.rfind('}')
         i = 0
         inputs = []
-        allblocks = []
+        self._blocks = []
         while i+1 < j:
             start, end, name = UCoreUtils.findBlock(code, i+1)
             if end == -1 or start == -1:
                 break
             i = end
             inputs.append(name)
-            allblocks.append((start, end, name))
+            self._blocks.append((start, end, name))
 
         attrs = map(lambda x: x.split(':'), inputs)
         attrmap = map(lambda x: x[0], attrs)
@@ -256,7 +265,7 @@ class PyScript(NFunctionBase):
             self.onAttributeChanged.execute(at, EAttrChange.AC_Added, typ)
 
         # finally clean up the actual script:
-        cleanScript = self._cleanupStr(self._rawScript, allblocks)
+        cleanScript = self._cleanupStr(self._rawScript, self._blocks)
 
         self._script.setCode(cleanScript); print(cleanScript)
 
@@ -266,6 +275,9 @@ class PyScript(NFunctionBase):
             cleanScript = cleanScript.replace(cleanScript[block[0] - 1:block[1] + 1], "%s.get()" % block[2].split(':')[0])
 
         return cleanScript
+
+    def updateCode(self):
+        self._script.setCode(self._cleanupStr(self._rawScript, self._blocks))
 
 
 class BatchScript(PyScript):
@@ -319,7 +331,7 @@ class ForEachLoop(NFunctionBase):
         self._counter = []
 
         NATTR(self, 'value', EAttrType.AT_ReadOnly)
-        self.value = NDynamicAttr('value', EDataType.DT_Iterable, None, self)
+        self.value = NDynamicAttr('value', EDataType.DT_Variant, None, self)
 
         NATTR(self, 'index', EAttrType.AT_ReadOnly)
         self.index = NDynamicAttr('index', EDataType.DT_Int, NInt(0), self, noInput=True)
@@ -399,7 +411,7 @@ class ReadDir(NFunctionBase):
             fp = "%s\\%s" % (path, item)  # Parse the full path for the current item.
             # Check if the item we're going through is a directory or a file.
             if os.path.isfile(fp):
-                files.append(fp)
+                files.append(NString(fp))
 
             elif self._bRecursive and os.path.isdir(fp):
                 files.extend(self.goThroughDir(fp))

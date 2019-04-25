@@ -966,7 +966,7 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
                                     index=self.attrCount,
                                     preset=None,
                                     dataType=dataType,
-                                    maxConnections=1)
+                                    maxConnections=1 if numAllowedc == -1 else -1)  # Can bind execs to multiple values.
 
 
         self.attrCount += 1

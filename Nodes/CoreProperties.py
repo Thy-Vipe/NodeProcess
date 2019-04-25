@@ -394,8 +394,10 @@ class NFloat(NMutable):
 class NVariant(NMutable):
     def __init__(self, v=None):
         super(NVariant, self).__init__(v, '')
-
         self._type = EDataType.DT_Variant
+
+        if v:
+            self.set(v)
 
     def set(self, v):
         super(NVariant, self).set(v)
@@ -409,6 +411,7 @@ class NVariant(NMutable):
 
     def type_(self):
         return self._type
+
 
 
 class NStatus(NMutable):
