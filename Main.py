@@ -1,6 +1,7 @@
 import sys, os
 from PySide2 import QtCore, QtGui, QtWidgets
 from Windows import NWindows as Win
+from Nodes import FuncNodes as funcs
 from Nodes import Core
 from NThreads import NThreading
 import global_accessor as g_a
@@ -19,17 +20,26 @@ class APPLICATION(Core.NWorld):
 
     @staticmethod
     def registerFunctions():
-        g_a.registerFunction(Core.NFunctionBase)
-        g_a.registerFunction(Core.Tester)
-        g_a.registerFunction(Core.Print)
-        g_a.registerFunction(Core.PyScript)
-        g_a.registerFunction(Core.BatchScript)
-        g_a.registerFunction(Core.ForLoop)
-        g_a.registerFunction(Core.ForEachLoop)
-        g_a.registerFunction(Core.Reroute)
-        g_a.registerFunction(Core.ToString)
-        g_a.registerFunction(Core.ReadDir)
-        # @TODO finish adding other registerable functions.
+        for k, cls in funcs.__dict__.items():
+            if APPLICATION.checkBases(cls, Core.NFunctionBase):
+                g_a.registerFunction(cls)
+
+    @staticmethod
+    def checkBases(cls, stype, itMax=10):
+        if isinstance(cls, type):
+            if stype in cls.__bases__:
+                return True
+
+            else:
+                for base in cls.__bases__:
+                    if stype in base.__bases__:
+                        return True
+                    else:
+                        itMax -= 1
+                        return APPLICATION.checkBases(base, stype, itMax)
+        else:
+            return False
+
 
     def spawnInterface(self):
         self._WindowReference = Win.NMainWindow(self)

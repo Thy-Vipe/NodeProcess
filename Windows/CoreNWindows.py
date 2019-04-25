@@ -1384,7 +1384,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
             return False
 
         # no connection with different types unless marked as NVariant
-        if slot_item.dataType != self.dataType and self.dataType != EDataType.DT_Variant:
+        if slot_item.dataType != self.dataType and self.dataType != EDataType.DT_Variant and slot_item.dataType != EDataType.DT_Variant:
             return False
 
         # otherwise, all fine.

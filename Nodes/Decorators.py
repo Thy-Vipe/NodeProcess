@@ -36,6 +36,18 @@ def NATTR(ClassObj, PropName, *args: AttrType, DESC=''):
         raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
 
 
+def RNATTR(ClassObj, PropName):
+    if hasattr(ClassObj, '__PropFlags__'):
+        del ClassObj.__PropFlags__[PropName]
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
+
+def DYNATTR(ClassObj, PropName, cls, *args, **kwargs):
+    v = cls(*args, **kwargs)
+    setattr(ClassObj, PropName, v)
+
+
 def REGISTER_HOOK(ClassObj, PropName, hook):
     """
     Bind a delegate (hook) to a property. Will raise an error if the class it is being used on does not use CLASS_BODY()
