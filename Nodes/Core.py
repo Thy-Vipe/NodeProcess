@@ -4,6 +4,7 @@ from Nodes.Decorators import *
 from Delegates.InternalDelegates import *
 from Nodes.CoreProperties import *
 from Nodes.CoreObject import *
+import types
 
 
 
@@ -92,10 +93,11 @@ class NDynamicAttr(NObject):
     def connect(self, *args):
         # from -> to ex output.connect(input)
         res = []
-        if isinstance(args[0], NDynamicAttr):
+        if isinstance(args[0], NDynamicAttr) or isinstance(getattr(args[0], args[1]), NDynamicAttr):
             obj = args[0]
-            res.append(self.getOutDelegate().bindFunction(obj, 'set'))
-            res.append(obj.getInDelegate().bindFunction(self, 'get'))
+            dyn = getattr(args[0], args[1]) if not isinstance(obj, NDynamicAttr) else obj
+            res.append(self.getOutDelegate().bindFunction(dyn, 'set'))
+            res.append(dyn.getInDelegate().bindFunction(self, 'get'))
         elif len(args) == 2 and args[0] and isinstance(args[1], str):
             res.append(self.getOutDelegate().bindFunction(args[0], args[1]))
 
@@ -162,6 +164,27 @@ class NFunctionBase(NObject):
 
     def type_(self):
         return self._funcType
+
+    def registerGetters(self, getter_syntax: str = '_get_{n}'):
+        """
+        Call this method to automatically register all getters from a class. It is not called by default.
+        :param getter_syntax: The syntax to use to parse the getter name. Its default value is '_get{n}' with n being the original setter's name.
+        :type getter_syntax: str
+        """
+        properties = []
+        for x in dir(self):
+            ref = getattr(self, x)
+            if callable(ref) and isinstance(ref, types.MethodType):
+                properties.append(ref)
+
+        for prop in properties:
+            getter_name = getter_syntax.format(n=prop.__name__)
+            for p in properties:
+                if p != prop:
+                    if p.__name__.lower() == getter_name.lower():
+                        REGISTER_GETTER(self, prop.__name__, p)
+
+
 
 
 

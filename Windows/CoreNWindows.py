@@ -1,5 +1,5 @@
 from PySide2 import QtCore, QtGui, QtWidgets
-import sys, os
+import sys, os, types
 
 # Get the local path to add to sys.path to properly load custom modules.
 if __name__ == "__main__":
@@ -8,7 +8,7 @@ if __name__ == "__main__":
 from Nodes.CoreObject import NObject
 from Nodes.CoreUtils import UCoreUtils
 from Nodes.CoreProperties import *
-from Nodes import Core
+from Nodes import Core, FuncNodes
 from Windows import NWindowsUtils
 
 
@@ -207,7 +207,14 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                     obj = NPropertyDisplay(self, prop); obj.addItem(tx)
                     self._layout.addWidget(obj)
 
-            elif callable(propInst):
+                elif dt == EDataType.DT_Bool:
+                    tx = QtWidgets.QCheckBox(self)
+                    tx.stateChanged.connect(propInst.set)
+                    tx.setText(prop)
+                    tx.setChecked(propInst.get())
+                    self._layout.addWidget(tx)
+
+            elif callable(propInst) and isinstance(propInst, types.MethodType):
                 if EAttrType.AT_kSlot in propData:
                     btn = QtWidgets.QPushButton(self)
                     btn.setText(prop)
@@ -251,6 +258,14 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                                     tx.setValue(getter())
                                 obj = NPropertyDisplay(self, prop); obj.addItem(tx)
                                 self._layout.addWidget(obj)
+
+                            elif dt == EDataType.DT_Bool:
+                                tx = QtWidgets.QCheckBox(self)
+                                tx.stateChanged.connect(propInst)
+                                if getter:
+                                    tx.setChecked(getter())
+                                tx.setText(prop)
+                                self._layout.addWidget(tx)
 
 
             elif len(propData) != 0:
@@ -321,7 +336,13 @@ class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
     def _receiveEnter(self, obj: QtCore.QObject):
         text = self.lineInput.text()
         classObj = GA.functionClasses.get(text, Error_Type)
-        new_object = classObj("%s_%d" % (text, len(GA.funcInstances(classObj))))
+        new_object = Error_Type()
+
+        if classObj is type:
+            new_object = classObj("%s_%d" % (text, len(GA.funcInstances(classObj))))
+
+        elif callable(classObj) and isinstance(classObj, types.FunctionType):
+            new_object = FuncNodes.DynamicFunction(classObj.__name__, classObj)
 
         if not isinstance(new_object, Error_Type):
             print('try create node')
@@ -882,11 +903,11 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
         print('detected wrapped node changed')
         pass
 
-    def onWrappedNodeAttrChange(self, attr: str, state: EAttrChange, typ: EDataType):
+    def onWrappedNodeAttrChange(self, attr: str, state: EAttrChange, typ: EDataType = None, mode=0):
         if state == EAttrChange.AC_Removed:
             self._deleteAttribute(self.attrs.index(attr))
-        elif state == EAttrChange.AC_Added:
-            self._internal_addAttr(attr, -1, True, True, typ)
+        elif state == EAttrChange.AC_Added and typ:
+            self._internal_addAttr(attr, -1, True if mode in (0, 2) else False, True if mode in (0, 1) else False, typ)
 
 
     @property
@@ -1486,6 +1507,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
 
                 elif isinstance(prop, Core.NDynamicAttr):
                     bml = prop.connect(to.owner.node(), to.attribute)
+                    print(bml)
                     if len(bml) != 0:
                         self.newConnection.funcConnections.extend([Core.NWeakRef(x) for x in bml])
                     else:

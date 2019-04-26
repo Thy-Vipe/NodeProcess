@@ -30,7 +30,8 @@ DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
 
 DATATYPES_STR = {"str": EDataType.DT_String,
                  "int": EDataType.DT_Int,
-                 "float": EDataType.DT_Float
+                 "float": EDataType.DT_Float,
+                 "bool": EDataType.DT_Bool
                  }
 
 
@@ -970,3 +971,18 @@ DATACLASSES = {EDataType.DT_Delegate: None,
                EDataType.DT_Iterable: list,
                EDataType.DT_Bool: bool
                }
+
+CLASSTYPES = {str: EDataType.DT_String,
+              NString: EDataType.DT_String,
+              int: EDataType.DT_Int,
+              float: EDataType.DT_Float,
+              list: EDataType.DT_Iterable,
+              tuple: EDataType.DT_Iterable,
+              NArray: EDataType.DT_Iterable,
+              bool: EDataType.DT_Bool,
+              NPoint: EDataType.DT_Point,
+              NVariant: EDataType.DT_Variant,
+              NVector: EDataType.DT_Vector,
+              NScript: EDataType.DT_Script,
+              NBatchScript: EDataType.DT_Script
+              }

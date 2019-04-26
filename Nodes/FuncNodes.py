@@ -1,4 +1,5 @@
 from Nodes.Core import *
+import shutil
 
 
 class Tester(NFunctionBase):
@@ -42,10 +43,10 @@ class PyScript(NFunctionBase):
         self._rawScript = ''
         self._blocks = []
 
-        REGISTER_GETTER(self, 'script', self.getRawStr)
+        self.registerGetters()
 
 
-    def getRawStr(self):
+    def _get_script(self):
         return self._rawScript
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
@@ -204,6 +205,46 @@ class ForEachLoop(NFunctionBase):
             idx += 1
 
 
+class Condition(NFunctionBase):
+    def __init__(self, funcName):
+        super(Condition, self).__init__(funcName, None, EFuncType.FT_Callable)
+
+        self._accept = False
+
+        self.trueDelegate = DelegateSingle('trueDelegate_%s' % self.getName(), self)
+        self.falseDelegate = DelegateSingle('trueDelegate_%s' % self.getName(), self)
+
+        self.registerGetters()
+
+        REGISTER_HOOK(self, 'true', self.trueDelegate)
+        REGISTER_HOOK(self, 'false', self.falseDelegate)
+
+    def then(self):
+        pass
+
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    def true(self):
+        self.trueDelegate.execute()
+
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    def false(self):
+        self.falseDelegate.execute()
+
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    def execute(self):
+        if self._accept:
+            self.true()
+        else:
+            self.false()
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
+    def condition(self, v: bool):
+        self._accept = bool(v)
+
+    def _get_condition(self):
+        return self._accept
+
+
 class Reroute(NFunctionBase):
     def __init__(self, funcName):
         super(Reroute, self).__init__(funcName, None, EFuncType.FT_Pure)
@@ -233,7 +274,9 @@ class ReadDir(NFunctionBase):
         self.result = NDynamicAttr('result', EDataType.DT_Iterable, [], self, noInput=True)
 
         NATTR(self, 'directory', EAttrType.AT_ReadWrite, DESC="The read directory, a full path.")
-        self.directory = NDynamicAttr('directory', EDataType.DT_String, '')
+        self.directory = NDynamicAttr('directory', EDataType.DT_String, '', self)
+
+        self.registerGetters()
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
     def isRecursive(self, v: bool):
@@ -241,6 +284,9 @@ class ReadDir(NFunctionBase):
         When true, find all sub-folders' files from the provided directory. It can be a slow operation.
         """
         self._bRecursive = bool(v)
+
+    def _get_isRecursive(self):
+        return self._bRecursive
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
@@ -274,6 +320,8 @@ class RenameFile(NFunctionBase):
 
         self._replaceStatement = ''
 
+        self.registerGetters()
+
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
         fp = str(self.file.get())
@@ -285,7 +333,10 @@ class RenameFile(NFunctionBase):
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_String)
     def newName(self, v: str):
-        self._replaceStatement = v
+        self._replaceStatement = str(v)
+
+    def _get_newName(self):
+        return self._replaceStatement
 
 
 class Sequence(NFunctionBase):
@@ -298,17 +349,107 @@ class Sequence(NFunctionBase):
         NATTR(self, 'addEntry', EAttrType.AT_kSlot)
         NATTR(self, 'removeEntry', EAttrType.AT_kSlot)
 
-    @Property(EPropType.PT_Internal, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_Internal)
     def addEntry(self):
         attr = 'then_%d' % self._idx
         setattr(self, attr, self.then)
-        self.onAttributeChanged.execute(attr, EAttrChange.AC_Added, EDataType.DT_Delegate)
+        self.onAttributeChanged.execute(attr, EAttrChange.AC_Added, typ=EDataType.DT_Delegate, mode=2)
         self._idx += 1
 
-    @Property(EPropType.PT_Internal, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_Internal)
     def removeEntry(self):
+        if self._idx == 2: return
+
         attr = 'then_%d' % (self._idx - 1)
         delattr(self, attr)
-        self.onAttributeChanged.execute(attr, EAttrChange.AC_Removed, EDataType.DT_Delegate)
+        self.onAttributeChanged.execute(attr, EAttrChange.AC_Removed)
         self._idx -= 1
 
+
+class MoveToDir(NFunctionBase):
+    def __init__(self, funcName):
+        super(MoveToDir, self).__init__(funcName, EFuncType.FT_Callable)
+
+        NATTR(self, 'src', EAttrType.AT_Serializable, EAttrType.AT_ReadWrite,
+              DESC="The source path, can be either\n a directory or a file")
+        self.src = NDynamicAttr('src', EDataType.DT_String, '', self)
+
+        NATTR(self, 'dst', EAttrType.AT_Serializable, EAttrType.AT_ReadWrite,
+              DESC="The destination path. It must be a directory.")
+        self.dst = NDynamicAttr('dst', EDataType.DT_String, '', self)
+
+        self._createDir = True
+
+        self.registerGetters()
+
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    def execute(self):
+        srcPath = self.src.get().toString()
+        dstPath = self.dst.get().toString()
+        if not os.path.exists(dstPath) and self._createDir:
+            os.mkdir(dstPath)
+        elif not os.path.exists(dstPath):
+            raise FileNotFoundError("Destination directory does not exist. If you want to automatically create non-existing directories, set bCreateDirectory to true.")
+
+        if os.path.isdir(srcPath):
+            if not os.path.isdir(dstPath):
+                raise FileNotFoundError("Source is a directory but destination isn't! Aborting.")
+
+            shutil.move(srcPath, dstPath)
+        else:
+            p, f = srcPath.rsplit('\\', 1)
+            destfp = "%s\\%s" % (dstPath, f)
+            shutil.move(srcPath, destfp)
+
+        self.then()
+
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
+    def bCreateDirectory(self, v: bool):
+        self._createDir = bool(v)
+
+    def _get_bCreateDirectory(self):
+        return self._createDir
+
+
+class DynamicFunction(NFunctionBase):
+    NO_DISPLAY = True  # This class is NOT visible by the UI
+
+    def __init__(self, funcName, baseMethod):
+        super(DynamicFunction, self).__init__(funcName, None, EFuncType.FT_Callable)
+
+        self._methodRef = baseMethod
+        self.inputs = []
+        self.outputs = []
+
+        self.buildNodeFromFunc()
+
+    def buildNodeFromFunc(self):
+        sig = inspect.signature(self._methodRef)
+        print(sig.return_annotation)
+        null = inspect.Parameter.empty
+        for k, v in sig.parameters.items():
+            name = k
+            typ = v.annotation
+            default = v.default
+            valueType = CLASSTYPES[typ] if typ is not null else EDataType.DT_Variant
+            defaultValue = default if default is not null else None
+            newAttr = NDynamicAttr(name, valueType, defaultValue, self)
+
+            NATTR(self, name, EAttrType.AT_WriteOnly)
+            setattr(self, name, newAttr)
+
+        for k, v in self._methodRef.__returnValues__.items():
+            valueType = CLASSTYPES[v]
+            newAttr = NDynamicAttr(k, valueType, None, self)
+
+            NATTR(self, k, EAttrType.AT_ReadOnly)
+            setattr(self, k, newAttr)
+
+    def execute(self):
+        self._methodRef()
+
+
+@ExposedMethod(result=str)
+def appendString(a:str, b:str, c:str):
+    return a+b+c

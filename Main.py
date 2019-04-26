@@ -5,7 +5,7 @@ from Nodes import FuncNodes as funcs
 from Nodes import Core, CoreUtils
 from NThreads import NThreading
 import global_accessor as g_a
-import threading
+import threading, types
 
 # Get the local path to add to sys.path to properly load custom modules.
 if __name__ == "__main__":
@@ -22,7 +22,12 @@ class APPLICATION(Core.NWorld):
     def registerFunctions():
         for k, cls in funcs.__dict__.items():
             if CoreUtils.UCoreUtils.checkBases(cls, Core.NFunctionBase):
-                g_a.registerFunction(cls)
+                if not getattr(cls, 'NO_DISPLAY', False):
+                    g_a.registerFunction(cls)
+
+            elif callable(cls) and isinstance(cls, types.FunctionType):
+                if getattr(cls, '__VisibleFunc__', False):
+                    g_a.registerFunction(cls)
 
     @property
     def path(self):
