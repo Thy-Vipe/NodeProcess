@@ -911,12 +911,11 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
             if callable(item):
                 attr = getattr(item, EXPOSEDPROPNAME, None)
                 attrDetails = getattr(item, EXPOSED_EXTRADATA, None)
-                if attr and EPropType.PT_Readable in attr and EAttrType.AT_Blacklisted not in itemInfo:
+                if attr and EPropType.PT_Readable in attr and EPropType.PT_Internal not in attr and EAttrType.AT_Blacklisted not in itemInfo:
                     assert attrDetails.get('dataType', None) is not None  # all properties must have a data type.
                     self._internal_addAttr(prop, -1, EPropType.PT_Output in attr or EPropType.PT_FuncDelegateOut in attr,
                                            EPropType.PT_FuncDelegateIn in attr or EPropType.PT_Input in attr, attrDetails['dataType'])
 
-                    # @TODO fill attributes procedurally in UI node
 
             elif isinstance(item, Core.NDynamicAttr):
                 bNoWrite = EAttrType.AT_ReadOnly not in itemInfo; bNoRead = EAttrType.AT_WriteOnly not in itemInfo
@@ -1472,7 +1471,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
                     attr = getattr(prop, EXPOSEDPROPNAME, None); attrDetails = getattr(prop, EXPOSED_EXTRADATA, None)
                     assert attr and attrDetails
                     if 1:  # attrDetails['dataType'] == EDataType.DT_Delegate:
-                        delegate = node.__PropHooks__.get(from_.attribute, None)
+                        delegate = node.__PropHooks__.get(prop.__name__, None)
                         assert delegate, "Delegate for %s.%s not registered." % (node.getName(), self.attribute)
 
                         bm = delegate.bindFunction(to.owner.node(), to.attribute)

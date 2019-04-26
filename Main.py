@@ -1,4 +1,5 @@
 import sys, os
+from PySide2 import QtWidgets
 from Windows import NWindows as Win
 from Nodes import FuncNodes as funcs
 from Nodes import Core, CoreUtils

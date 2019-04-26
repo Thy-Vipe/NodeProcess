@@ -141,7 +141,7 @@ class NFunctionBase(NObject):
         self.onAttributeChanged = DelegateMulticast('onAttributeAddedDelegate_%s' % self.getName(), self)
 
         NATTR(self, '_thenDelegate', EAttrType.AT_Serializable, EAttrType.AT_SingleCastDelegate)
-        self._thenDelegate = DelegateSingle("ThenDelegate_%s" % self.getName(), self)
+        self._thenDelegate = DelegateMulticast("ThenDelegate_%s" % self.getName(), self)
 
         self._funcType = FuncType
 

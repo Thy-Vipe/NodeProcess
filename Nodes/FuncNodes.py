@@ -287,3 +287,28 @@ class RenameFile(NFunctionBase):
     def newName(self, v: str):
         self._replaceStatement = v
 
+
+class Sequence(NFunctionBase):
+    def __init__(self, funcName):
+        super(Sequence, self).__init__(funcName, EFuncType.FT_Callable)
+
+        self._idx = 2
+        self.then_1 = self.then
+
+        NATTR(self, 'addEntry', EAttrType.AT_kSlot)
+        NATTR(self, 'removeEntry', EAttrType.AT_kSlot)
+
+    @Property(EPropType.PT_Internal, dataType=EDataType.DT_Delegate)
+    def addEntry(self):
+        attr = 'then_%d' % self._idx
+        setattr(self, attr, self.then)
+        self.onAttributeChanged.execute(attr, EAttrChange.AC_Added, EDataType.DT_Delegate)
+        self._idx += 1
+
+    @Property(EPropType.PT_Internal, dataType=EDataType.DT_Delegate)
+    def removeEntry(self):
+        attr = 'then_%d' % (self._idx - 1)
+        delattr(self, attr)
+        self.onAttributeChanged.execute(attr, EAttrChange.AC_Removed, EDataType.DT_Delegate)
+        self._idx -= 1
+

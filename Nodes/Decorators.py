@@ -110,6 +110,7 @@ class EPropType:
     PT_FuncDelegateIn = 2
     PT_FuncDelegateOut = 3
     PT_Readable = 4
+    PT_Internal = 5
 
 
 class EDataType:
