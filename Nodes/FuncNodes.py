@@ -451,5 +451,5 @@ class DynamicFunction(NFunctionBase):
 
 
 @ExposedMethod(result=str)
-def appendString(a:str, b:str, c:str):
+def appendString(a: str, b: str, c: str):
     return a+b+c
