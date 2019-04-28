@@ -172,6 +172,7 @@ class NObject(object):
                         obj.__reader__(val)
                         idx += 1
                     elif hasattr(obj, '__binaryreader__'):
+                        print(val)
                         if val == 'array_begin':
                             endArray = values.index('array_end'.encode()); assert endArray != -1  # should never be false
                             dt = values[idx+1:endArray]
@@ -184,6 +185,7 @@ class NObject(object):
                         elif val == 'object_begin':
                             endObject = values.index('object_end'.encode()); assert endObject != -1  # should never be false
                             dt = values[idx+1:endObject]
+                            print("DATA FOR %s ====> %s" % (self, dt) )
                             obj.__binaryreader__(dt)
                             idx += endObject + 1
                     else:

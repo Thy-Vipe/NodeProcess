@@ -2,15 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="df7f8423-16d8-4738-ae80-728350c28d75" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Delegates/InternalDelegates.py" beforeDir="false" afterPath="$PROJECT_DIR$/Delegates/InternalDelegates.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/Core.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Core.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/CoreObject.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/CoreObject.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/CoreProperties.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/CoreProperties.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/CoreUtils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/CoreUtils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/Decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Decorators.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/FuncNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/FuncNodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Windows/CoreNWindows.py" beforeDir="false" afterPath="$PROJECT_DIR$/Windows/CoreNWindows.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,11 +13,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="491">
-              <caret line="198" selection-start-line="198" selection-end-line="198" />
+            <state relative-caret-position="-117">
+              <caret line="117" column="29" lean-forward="true" selection-start-line="117" selection-start-column="29" selection-end-line="117" selection-end-column="29" />
               <folding>
                 <element signature="e#3088#3397#0" />
                 <element signature="e#3446#3722#0" />
@@ -36,7 +29,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Main.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="432">
@@ -127,8 +120,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-966">
-              <caret line="115" column="36" lean-forward="true" selection-start-line="115" selection-start-column="36" selection-end-line="115" selection-end-column="36" />
+            <state relative-caret-position="1418">
+              <caret line="174" column="34" selection-start-line="174" selection-start-column="34" selection-end-line="174" selection-end-column="34" />
               <folding>
                 <element signature="e#0#27#0" expanded="true" />
               </folding>
@@ -207,13 +200,13 @@
         <option value="$PROJECT_DIR$/Nodes/FuncNodes.py" />
         <option value="$PROJECT_DIR$/Nodes/Decorators.py" />
         <option value="$PROJECT_DIR$/Nodes/CoreProperties.py" />
-        <option value="$PROJECT_DIR$/Nodes/CoreObject.py" />
         <option value="$PROJECT_DIR$/Delegates/InternalDelegates.py" />
+        <option value="$PROJECT_DIR$/Nodes/CoreObject.py" />
         <option value="$PROJECT_DIR$/Nodes/Core.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="-7" />
     <option name="width" value="1694" />
     <option name="height" value="1047" />
@@ -294,7 +287,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.Core">
+  <component name="RunManager" selected="Python.Main">
     <configuration name="Core" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="NodeProcess" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -402,8 +395,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.Core" />
         <item itemvalue="Python.Main" />
+        <item itemvalue="Python.Core" />
         <item itemvalue="Python.FuncNodes" />
         <item itemvalue="Python.scratch" />
         <item itemvalue="Python.scratch_1" />
@@ -441,7 +434,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.13277134" />
@@ -610,13 +603,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="34" selection-start-line="34" selection-end-line="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="350">
@@ -676,8 +662,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-966">
-          <caret line="115" column="36" lean-forward="true" selection-start-line="115" selection-start-column="36" selection-end-line="115" selection-end-column="36" />
+        <state relative-caret-position="1418">
+          <caret line="174" column="34" selection-start-line="174" selection-start-column="34" selection-end-line="174" selection-end-column="34" />
           <folding>
             <element signature="e#0#27#0" expanded="true" />
           </folding>
@@ -686,8 +672,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="491">
-          <caret line="198" selection-start-line="198" selection-end-line="198" />
+        <state relative-caret-position="-117">
+          <caret line="117" column="29" lean-forward="true" selection-start-line="117" selection-start-column="29" selection-end-line="117" selection-end-column="29" />
           <folding>
             <element signature="e#3088#3397#0" />
             <element signature="e#3446#3722#0" />
@@ -695,6 +681,13 @@
             <element signature="e#3869#4448#0" />
             <element signature="e#4666#5145#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="34" selection-start-line="34" selection-end-line="34" />
         </state>
       </provider>
     </entry>

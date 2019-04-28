@@ -69,7 +69,7 @@ class NDynamicAttr(NObject):
         NATTR(self, '_value', EAttrType.AT_Serializable)
         self._value = self.check(initialValue)
 
-        NATTR(self, '_valueChanged', EAttrType.AT_Serializable); NATTR(self, '_plugDelegate', EAttrType.AT_Serializable)
+        NATTR(self, '_valueChanged', EAttrType.AT_Serializable, EAttrType.AT_Persistent); NATTR(self, '_plugDelegate', EAttrType.AT_Serializable, EAttrType.AT_Persistent)
         self._valueChanged = self._plugDelegate = None
 
         self._valueChanged = DelegateMulticast("%s_ValueChangedDelegate" % self.getName(), self)
@@ -196,3 +196,17 @@ class NFunctionBase(NObject):
                     if p.__name__.lower() == getter_name.lower():
                         REGISTER_GETTER(self, prop.__name__, p)
 
+
+test = NDynamicAttr('obj', EDataType.DT_Bool, True)
+Ar = NArchive()
+Ar << test
+
+print(test)
+print(test.dataType())
+M = NMemoryReader(Ar.getData())
+
+n = NDynamicAttr('', EDataType.DT_Int, False)
+M << n
+print(n)
+print(n.dataType())
+print(n.get())
