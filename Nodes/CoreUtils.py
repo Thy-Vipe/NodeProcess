@@ -64,3 +64,16 @@ class UCoreUtils:
                         return UCoreUtils.checkBases(base, stype, itMax)
         else:
             return False
+
+
+    @staticmethod
+    def findFmtArgs(s: str, frm: int = 0, dlmIn='{', dlmOut='}'):
+        res = []
+        i = frm
+        while s.find(dlmIn, i) != -1:
+            r = UCoreUtils.findBlock(s, i, dlmIn, dlmOut)
+            res.append(r[2])
+            i = r[0]
+
+        return res
+

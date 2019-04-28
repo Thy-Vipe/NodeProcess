@@ -23,6 +23,9 @@ class NWeakMethod(weakref.WeakMethod):
     def __init__(self, *args, **kwargs):
         super(NWeakMethod, self).__init__(*args, **kwargs)
 
+    def isValid(self):
+        return self() is not None
+
 
 class NFinalizer(weakref.finalize):
     def __init__(self, obj, callback, *args, **kwargs):

@@ -196,6 +196,8 @@ class Delegate(NObject):
         self._functions.remove(connection)
         print('Deleted connection %s' % str(connection))
 
+    def clearAll(self):
+        self._functions.clear()
 
 
 class DelegateSingle(Delegate):

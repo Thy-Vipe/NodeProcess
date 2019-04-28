@@ -1,5 +1,5 @@
 from Nodes.Core import *
-import shutil
+import shutil, string
 
 
 class Tester(NFunctionBase):
@@ -252,18 +252,6 @@ class Reroute(NFunctionBase):
         # @TODO finish reroute node
 
 
-class ToString(NFunctionBase):
-    def __init__(self, funcName):
-        super(ToString, self).__init__(funcName, None, EFuncType.FT_Pure)
-
-        NATTR(self, 'result', EAttrType.AT_ReadOnly)
-        self.result = NDynamicAttr('result', EDataType.DT_String, '', self, noInput=True)
-
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Variant)
-    def input(self, v):
-        self.result.set(str(v))
-
-
 class ReadDir(NFunctionBase):
     def __init__(self, funcName):
         super(ReadDir, self).__init__(funcName, None, EFuncType.FT_Callable)
@@ -416,7 +404,7 @@ class DynamicFunction(NFunctionBase):
     NO_DISPLAY = True  # This class is NOT visible by the UI
 
     def __init__(self, funcName, baseMethod):
-        super(DynamicFunction, self).__init__(funcName, None, EFuncType.FT_Callable)
+        super(DynamicFunction, self).__init__(funcName, None, baseMethod.__mode__)
 
         self._methodRef = baseMethod
         self.inputs = []
@@ -434,22 +422,102 @@ class DynamicFunction(NFunctionBase):
             default = v.default
             valueType = CLASSTYPES[typ] if typ is not null else EDataType.DT_Variant
             defaultValue = default if default is not null else None
-            newAttr = NDynamicAttr(name, valueType, defaultValue, self)
+            hook = self.execute if self._methodRef.__mode__ == EFuncType.FT_Pure else None
+            newAttr = NDynamicAttr(name, valueType, defaultValue, self, EvaluationHook=hook)
 
             NATTR(self, name, EAttrType.AT_WriteOnly)
             setattr(self, name, newAttr)
+            self.inputs.append(newAttr)
 
         for k, v in self._methodRef.__returnValues__.items():
             valueType = CLASSTYPES[v]
-            newAttr = NDynamicAttr(k, valueType, None, self)
+            ohook = self.execute if self._methodRef.__mode__ == EFuncType.FT_Pure else None
+            newoAttr = NDynamicAttr(k, valueType, None, self, EvaluationHook=ohook)
 
             NATTR(self, k, EAttrType.AT_ReadOnly)
-            setattr(self, k, newAttr)
+            setattr(self, k, newoAttr)
+            self.outputs.append(newoAttr)
 
     def execute(self):
-        self._methodRef()
+        vals = map(lambda x: x.get(bFromCaller=True), self.inputs)
+        res = self._methodRef(*vals)
+
+        j = self.outputs.__len__()
+        if j == 1:
+            self.outputs[0].set(res, bFromCaller=True)
+        else:
+            for idx in range(j):
+                self.outputs[idx].set(res[idx], bFromCaller=True)
+
+        self.then()
+
+    def getFunc(self):
+        return self._methodRef
 
 
-@ExposedMethod(result=str)
-def appendString(a: str, b: str, c: str):
-    return a+b+c
+class FormatString(NFunctionBase):
+    def __init__(self, funcName):
+        super(FormatString, self).__init__(funcName, None, EFuncType.FT_Pure)
+
+        self.fmtArgs = {}
+        self._string = ''
+
+        NATTR(self, 'source', EAttrType.AT_WriteOnly)
+        self.source = NDynamicAttr('source', EDataType.DT_String, '', self, EvaluationHook=self.applyFmt)
+
+        NATTR(self, 'result', EAttrType.AT_ReadOnly)
+        self.result = NDynamicAttr('result', EDataType.DT_String, '', self, noInput=True, EvaluationHook=self.applyFmt)
+
+    def applyFmt(self):
+        print('apply')
+        args = UCoreUtils.findFmtArgs(self._string)
+        for arg in args:
+            newInput = NDynamicAttr(arg, EDataType.DT_Variant, None, self)
+            self.fmtArgs[arg] = newInput
+
+            NATTR(self, arg, EAttrType.AT_WriteOnly)
+            setattr(self, arg, newInput)
+
+        self.result.set(self._string.format(**self.fmtArgs), bFromCaller=True)
+
+    def clearAttrs(self):
+        for k, v in self.fmtArgs.items():
+            RNATTR(self, k)
+            delattr(self, k)
+            self.onAttributeChanged.execute(k, EAttrChange.AC_Removed)
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=str)
+def toString(val):
+    return str(val)
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=NVariant)
+def add(a, b):
+    return a + b
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=NVariant)
+def minus(a, b):
+    return a - b
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=NVariant)
+def multiply(a, b):
+    return a * b
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=int)
+def literalInt(value: int):
+    return value
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=float)
+def literalFloat(value: float):
+    return value
+
+
+@ExposedMethod(EFuncType.FT_Pure, result=str)
+def literalStr(value: str):
+    return value
+

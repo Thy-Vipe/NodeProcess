@@ -77,14 +77,26 @@ class NDynamicAttr(NObject):
         if not kwargs.get('noInput', False):
             self._plugDelegate = CollectorSingle("%s_ValueQueryListener" % self.getName(), self)
 
-    def set(self, value, bMute=False):
+        self._onEvaluated = None
+        ehook = kwargs.get("EvaluationHook", None)
+        if ehook:
+            self._onEvaluated = NWeakMethod(ehook)
+
+    def set(self, value, bMute=False, bFromCaller=False):
+        if not bFromCaller and self._onEvaluated and self._onEvaluated.isValid():
+            self._onEvaluated()()
+
         self._value = self.check(value)
         if not bMute:
             self._valueChanged.execute(value)
 
-    def get(self, bUpdate=True):
+    def get(self, bUpdate=True, bFromCaller=False):
+        if not bFromCaller and self._onEvaluated and self._onEvaluated.isValid():
+            self._onEvaluated()()
+
         if bUpdate and self._plugDelegate and self._plugDelegate.isBound():
             self._value = self.check(self._plugDelegate.call())
+
         return self._value
 
     def hasConnection(self):

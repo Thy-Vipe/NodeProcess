@@ -147,7 +147,7 @@ def Property(*PropTypes: EPropType, **kwargs):
     return register_wrapper
 
 
-def ExposedMethod(**kwargs):
+def ExposedMethod(funcType, **kwargs):
     """
     Decorator for methods that do not use logic from a complex node. Use this if you wish to expose methods to the Visual Scripting.
     """
@@ -155,7 +155,7 @@ def ExposedMethod(**kwargs):
     def register_wrapper(func):
         func.__VisibleFunc__ = True
         func.__returnValues__ = kwargs
-        print(func.__doc__)
+        func.__mode__ = funcType
         return func
 
     return register_wrapper

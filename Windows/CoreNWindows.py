@@ -338,11 +338,18 @@ class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
         classObj = GA.functionClasses.get(text, Error_Type)
         new_object = Error_Type()
 
-        if classObj is type:
+        if type(classObj) is type:
             new_object = classObj("%s_%d" % (text, len(GA.funcInstances(classObj))))
 
         elif callable(classObj) and isinstance(classObj, types.FunctionType):
-            new_object = FuncNodes.DynamicFunction(classObj.__name__, classObj)
+            count = GA.funcInstances(FuncNodes.DynamicFunction)
+            n = 0
+            for item in count:
+                if item.getFunc().__name__ == classObj.__name__:
+                    n += 1
+
+            name = "%s_%d" % (classObj.__name__, n)
+            new_object = FuncNodes.DynamicFunction(name, classObj)
 
         if not isinstance(new_object, Error_Type):
             print('try create node')
