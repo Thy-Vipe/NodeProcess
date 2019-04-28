@@ -68,12 +68,16 @@ class UCoreUtils:
 
     @staticmethod
     def findFmtArgs(s: str, frm: int = 0, dlmIn='{', dlmOut='}'):
+        def check(v):
+            return v[0] != -1 and v[1] != -1
+
         res = []
         i = frm
-        while s.find(dlmIn, i) != -1:
+        while check(UCoreUtils.findBlock(s, i, dlmIn, dlmOut)):
             r = UCoreUtils.findBlock(s, i, dlmIn, dlmOut)
+            print(i)
             res.append(r[2])
-            i = r[0]
+            i = r[1] + 1
 
         return res
 

@@ -1,4 +1,5 @@
 from Nodes.Core import *
+from Nodes.CoreUtils import *
 import shutil, string
 
 
@@ -239,6 +240,7 @@ class Condition(NFunctionBase):
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
     def condition(self, v: bool):
+        print("setting condition to %d" % v)
         self._accept = bool(v)
 
     def _get_condition(self):
@@ -400,11 +402,13 @@ class MoveToDir(NFunctionBase):
         return self._createDir
 
 
-class DynamicFunction(NFunctionBase):
+class NFunctionWrapper(NFunctionBase):
     NO_DISPLAY = True  # This class is NOT visible by the UI
 
     def __init__(self, funcName, baseMethod):
-        super(DynamicFunction, self).__init__(funcName, None, baseMethod.__mode__)
+        assert IsDynamicMethod(baseMethod), "%s must be marked as dynamic using @ExposedMethod() decorator." % baseMethod.__name__
+
+        super(NFunctionWrapper, self).__init__(funcName, None, baseMethod.__mode__)
 
         self._methodRef = baseMethod
         self.inputs = []
@@ -425,7 +429,7 @@ class DynamicFunction(NFunctionBase):
             hook = self.execute if self._methodRef.__mode__ == EFuncType.FT_Pure else None
             newAttr = NDynamicAttr(name, valueType, defaultValue, self, EvaluationHook=hook)
 
-            NATTR(self, name, EAttrType.AT_WriteOnly)
+            NATTR(self, name, EAttrType.AT_WriteOnly, EAttrType.AT_Serializable)
             setattr(self, name, newAttr)
             self.inputs.append(newAttr)
 
@@ -445,7 +449,7 @@ class DynamicFunction(NFunctionBase):
         j = self.outputs.__len__()
         if j == 1:
             self.outputs[0].set(res, bFromCaller=True)
-        else:
+        elif j > 1:
             for idx in range(j):
                 self.outputs[idx].set(res[idx], bFromCaller=True)
 
@@ -462,23 +466,36 @@ class FormatString(NFunctionBase):
         self.fmtArgs = {}
         self._string = ''
 
-        NATTR(self, 'source', EAttrType.AT_WriteOnly)
-        self.source = NDynamicAttr('source', EDataType.DT_String, '', self, EvaluationHook=self.applyFmt)
+        NATTR(self, 'source', EAttrType.AT_WriteOnly, EAttrType.AT_Serializable, UPDATEHOOK=self.applyAttrs)
+        self.source = NDynamicAttr('source', EDataType.DT_String, '', self)
 
         NATTR(self, 'result', EAttrType.AT_ReadOnly)
         self.result = NDynamicAttr('result', EDataType.DT_String, '', self, noInput=True, EvaluationHook=self.applyFmt)
 
     def applyFmt(self):
-        print('apply')
-        args = UCoreUtils.findFmtArgs(self._string)
+        fmtArgs = {}
+        for k, v in self.fmtArgs.items():
+            fmtArgs[k] = v.get()
+
+        self.result.set(self._string.format(**fmtArgs), bFromCaller=True)
+
+    def applyAttrs(self):
+        newStr = self.source.get(bFromCaller=True).toString()
+        print(newStr, self._string)
+        if newStr == self._string:
+            return
+
+        self.clearAttrs()
+        args = UCoreUtils.findFmtArgs(newStr)
         for arg in args:
             newInput = NDynamicAttr(arg, EDataType.DT_Variant, None, self)
             self.fmtArgs[arg] = newInput
 
             NATTR(self, arg, EAttrType.AT_WriteOnly)
             setattr(self, arg, newInput)
+            self.onAttributeChanged.execute(arg, EAttrChange.AC_Added, EDataType.DT_Variant)
 
-        self.result.set(self._string.format(**self.fmtArgs), bFromCaller=True)
+        self._string = newStr
 
     def clearAttrs(self):
         for k, v in self.fmtArgs.items():
@@ -486,10 +503,21 @@ class FormatString(NFunctionBase):
             delattr(self, k)
             self.onAttributeChanged.execute(k, EAttrChange.AC_Removed)
 
+        self.fmtArgs.clear()
+
 
 @ExposedMethod(EFuncType.FT_Pure, result=str)
 def toString(val):
     return str(val)
+
+
+@ExposedMethod(EFuncType.FT_Pure, isContained=bool)
+def stringContains(src: str, value: str, caseSensitive: bool = False):
+
+    if caseSensitive:
+        return src.__contains__(value)
+    else:
+        return src.lower().__contains__(value.lower())
 
 
 @ExposedMethod(EFuncType.FT_Pure, result=NVariant)
@@ -505,6 +533,16 @@ def minus(a, b):
 @ExposedMethod(EFuncType.FT_Pure, result=NVariant)
 def multiply(a, b):
     return a * b
+
+
+@ExposedMethod(EFuncType.FT_Pure, v=bool)
+def operator_or(a: bool, b: bool):
+    return a or b
+
+
+@ExposedMethod(EFuncType.FT_Pure, v=bool)
+def operator_and(a: bool, b: bool):
+    return a and b
 
 
 @ExposedMethod(EFuncType.FT_Pure, result=int)

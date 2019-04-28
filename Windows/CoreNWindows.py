@@ -35,6 +35,7 @@ class NWidgetBase(NObject):
     # Shared signal. Fired when the widget's geometry changes.
     OnGeometryChange = QtCore.Signal(QtCore.QRect)
     sg_enterPressed = QtCore.Signal(QtCore.QObject)
+    sg_updated = QtCore.Signal()
 
     def __init__(self, owner, name=""):
         NObject.__init__(self, owner=owner, name=name, UseHardRef=True, noClassRegister=True)
@@ -100,6 +101,8 @@ class NLineEdit(NWidgetBase, QtWidgets.QLineEdit):
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
             self.sg_enterPressed.emit(self)
+            self.sg_updated.emit()
+
         else:
             super(NLineEdit, self).keyPressEvent(e)
 
@@ -109,6 +112,10 @@ class NSpinBox(NWidgetBase, QtWidgets.QSpinBox):
         NWidgetBase.__init__(self, p)
         QtWidgets.QSpinBox.__init__(self, p)
         self.setButtonSymbols(QtWidgets.QSpinBox.NoButtons)
+        self.valueChanged.connect(self.onChanged)
+
+    def onChanged(self, *args, **kwargs):
+        self.sg_updated.emit()
 
 
 class NDoubleBox(NWidgetBase, QtWidgets.QDoubleSpinBox):
@@ -116,6 +123,10 @@ class NDoubleBox(NWidgetBase, QtWidgets.QDoubleSpinBox):
         NWidgetBase.__init__(self, p)
         QtWidgets.QDoubleSpinBox.__init__(self, p)
         self.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
+        self.valueChanged.connect(self.onChanged)
+
+    def onChanged(self, *args, **kwargs):
+        self.sg_updated.emit()
 
 
 class NScriptEd(NWidgetBase, QtWidgets.QTextEdit):
@@ -132,6 +143,7 @@ class NScriptEd(NWidgetBase, QtWidgets.QTextEdit):
             self.sg_enterPressed_get.emit(self.toPlainText())
 
         self.sg_newText.emit(self.toPlainText())
+        self.sg_updated.emit()
         super(NScriptEd, self).keyPressEvent(e)
 
 
@@ -180,6 +192,8 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
             propData = self.nodeObj().__PropFlags__.get(prop, ())
             if isinstance(propInst, Core.NDynamicAttr) and EAttrType.AT_ReadOnly not in propData:
                 dt = propInst.dataType()
+                updater = GET_ATTRHOOK(self.nodeObj(), prop)
+                tx = None
                 if dt == EDataType.DT_String:
                     tx = NLineEdit(self)
                     tx.setText(str(propInst.get()))
@@ -214,6 +228,9 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                     tx.setChecked(propInst.get())
                     self._layout.addWidget(tx)
 
+                if updater:
+                    tx.sg_updated.connect(updater)
+
             elif callable(propInst) and isinstance(propInst, types.MethodType):
                 if EAttrType.AT_kSlot in propData:
                     btn = QtWidgets.QPushButton(self)
@@ -224,10 +241,12 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                 else:
                     methData = getattr(propInst, EXPOSED_EXTRADATA, None)
                     getter = GET_GETTER(self.nodeObj(), prop)
+                    updater = GET_ATTRHOOK(self.nodeObj(), prop)
                     typ = getattr(propInst, EXPOSEDPROPNAME, None)
                     if methData and typ:
                         dt = methData['dataType']
                         if EPropType.PT_Input in typ:
+                            tx = None
                             if dt == EDataType.DT_String:
                                 tx = NLineEdit(self)
                                 tx.textChanged.connect(propInst)
@@ -266,6 +285,9 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                                     tx.setChecked(getter())
                                 tx.setText(prop)
                                 self._layout.addWidget(tx)
+
+                            if updater:
+                                tx.sg_updated.connect(updater)
 
 
             elif len(propData) != 0:
@@ -341,15 +363,15 @@ class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
         if type(classObj) is type:
             new_object = classObj("%s_%d" % (text, len(GA.funcInstances(classObj))))
 
-        elif callable(classObj) and isinstance(classObj, types.FunctionType):
-            count = GA.funcInstances(FuncNodes.DynamicFunction)
+        elif callable(classObj) and isinstance(classObj, (types.FunctionType, types.MethodType)):
+            count = GA.funcInstances(FuncNodes.NFunctionWrapper)
             n = 0
             for item in count:
                 if item.getFunc().__name__ == classObj.__name__:
                     n += 1
 
             name = "%s_%d" % (classObj.__name__, n)
-            new_object = FuncNodes.DynamicFunction(name, classObj)
+            new_object = FuncNodes.NFunctionWrapper(name, classObj)
 
         if not isinstance(new_object, Error_Type):
             print('try create node')

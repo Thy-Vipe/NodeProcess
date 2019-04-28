@@ -3,7 +3,7 @@ from __future__ import division
 from functools import reduce
 import math
 from numbers import Real
-import array, struct, collections, os, subprocess
+import array, struct, collections, os, subprocess, types
 
 from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA
@@ -358,7 +358,7 @@ class NMutable(NProperty):
             raise RuntimeError("Buffer for %s is not defined." % self.__class__.__name__)
 
     def __reader__(self, data):
-        self._data = data[0]
+        self._data = data
 
     def __repr__(self):
         return str(self._data)
@@ -373,7 +373,110 @@ class NMutable(NProperty):
         return float(self.get())
 
 
-class NInt(NMutable):
+class NNumeric(NMutable):
+
+    def __add__(self, other):
+        if isinstance(other, (float, int)):
+            return self.__class__(self._data + other)
+        elif isinstance(other, NNumeric):
+            return self.__class__(self._data + other._data)
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __mul__(self, other):
+        if isinstance(other, (float, int)):
+            return self.__class__(self._data * other)
+        elif isinstance(other, NNumeric):
+            return self.__class__(self._data * other._data)
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __truediv__(self, other):
+        if isinstance(other, (float, int)):
+            return self.__class__(self._data / other)
+        elif isinstance(other, NNumeric):
+            return self.__class__(self._data / other._data)
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __floordiv__(self, other):
+        if isinstance(other, (float, int)):
+            return self.__class__(self._data // other)
+        elif isinstance(other, NNumeric):
+            return self.__class__(self._data // other._data)
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __neg__(self):
+        return self.__class__(-self._data)
+
+    def __sub__(self, other):
+        if isinstance(other, (float, int)):
+            return self.__class__(self._data - other)
+        elif isinstance(other, NNumeric):
+            return self.__class__(self._data - other._data)
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __lt__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data < other
+        elif isinstance(other, NNumeric):
+            return self._data < other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __le__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data <= other
+        elif isinstance(other, NNumeric):
+            return self._data <= other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __eq__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data == other
+        elif isinstance(other, NNumeric):
+            return self._data == other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __ne__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data != other
+        elif isinstance(other, NNumeric):
+            return self._data != other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __ge__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data > other
+        elif isinstance(other, NNumeric):
+            return self._data > other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __gt__(self, other):
+        if isinstance(other, (float, int)):
+            return self._data >= other
+        elif isinstance(other, NNumeric):
+            return self._data >= other._data
+        else:
+            raise TypeError("Invalid operand type for NNumeric: %s" % other.__class__.__name__)
+
+    def __float__(self):
+        return float(self._data)
+
+    def __int__(self):
+        return int(self._data)
+
+    def __bool__(self):
+        return bool(self._data)
+
+
+class NInt(NNumeric):
     """
     A simple mutable integer. Is serializable.
     """
@@ -381,7 +484,7 @@ class NInt(NMutable):
         super(NInt, self).__init__(v, 'i')
 
 
-class NFloat(NMutable):
+class NFloat(NNumeric):
     """
     A simple mutable float. Is serializable.
     """
@@ -975,7 +1078,9 @@ DATACLASSES = {EDataType.DT_Delegate: None,
 CLASSTYPES = {str: EDataType.DT_String,
               NString: EDataType.DT_String,
               int: EDataType.DT_Int,
+              NInt: EDataType.DT_Int,
               float: EDataType.DT_Float,
+              NFloat: EDataType.DT_Float,
               list: EDataType.DT_Iterable,
               tuple: EDataType.DT_Iterable,
               NArray: EDataType.DT_Iterable,

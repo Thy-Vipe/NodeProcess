@@ -3,6 +3,7 @@ from Nodes import CoreUtils
 from Nodes.Decorators import *
 from Nodes.CoreProperties import *
 import global_accessor as GA
+import warnings
 
 
 class BoundMethod(object):

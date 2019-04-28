@@ -50,7 +50,6 @@ class NObject(object):
         NATTR(self, '_name', EAttrType.AT_Serializable)
         self._name = NString(kwargs.get('name', "Unnamed"))
 
-        NATTR(self, '_owner', EAttrType.AT_Serializable)
         self._owner = NWeakRef(inOwner) if kwargs.get("UseHardRef", False) and inOwner else inOwner
 
         #  Always keep a hard reference of NWorld.
@@ -92,17 +91,37 @@ class NObject(object):
         :type Ar: NArchive.
         """
         OwnAr = NArchive()
+        if self.getOwner() is not None:
+            # Write header for nested objects.
+            # If owner is None (and should never be for nested objects) it will cause a deserialization error.
+            OwnAr << NString('object_begin')
+
         for prop in dir(self):
             __propFlags = self.__PropFlags__.get(prop, ())
             if EAttrType.AT_Serializable in __propFlags:
                 propInst = getattr(self, prop)
-                if propInst:
+                if propInst is not None:
                     # Do not recursively serialize NObjects. Only properties.
                     # Get UUID for objects unless they're declared as persistent, in which case serialize.
                     if isinstance(propInst, NObject) and EAttrType.AT_Persistent not in __propFlags:
                         OwnAr << propInst.getUUID()
+                    elif isinstance(propInst, str):
+                        obj = NString(propInst)
+                        OwnAr << obj
+                    elif isinstance(propInst, float):
+                        obj = NFloat(propInst)
+                        OwnAr << obj
+                    elif isinstance(propInst, (int, bool)):
+                        obj = NInt(propInst)
+                        OwnAr << obj
+
                     else:
                         OwnAr << propInst
+
+        if self.getOwner() is not None:
+            # Write header for nested objects.
+            # If owner is None (and should never be for nested objects) it will cause a deserialization error.
+            OwnAr << NString('object_end')
 
         Ar += OwnAr.combine()
 
@@ -115,7 +134,7 @@ class NObject(object):
         """
         prevUUID = self._uuid.copy()
         idx = 0
-        # print(data)
+        print("Data for %s: %s" % (self.getName(), data))
         values = struct.unpack_from(data[0][0], data[0][1], 0)
         # print(values)
         num = len(values); print(num)
@@ -125,9 +144,28 @@ class NObject(object):
                 __propFlags = self.__PropFlags__.get(prop, ())
                 if EAttrType.AT_Serializable in __propFlags:
                     obj = getattr(self, prop)
-                    val = values[idx] if not hasattr(values[idx], 'decode') else values[idx].decode()
+                    typ = 0
 
-                    assert obj, "Error: %s.%s is not properly initialized, but was serialized previously." % (self.__class__.__name__, prop)
+                    #  Explicitly cast from the base type to the mutable type
+                    #  in order to deserialize the value properly.
+
+                    if type(obj) is str:
+                        obj = NString(obj)
+                        typ = 1
+                    elif type(obj) is float:
+                        obj = NFloat(obj)
+                        typ = 2
+                    elif type(obj) is int:
+                        obj = NInt(obj)
+                        typ = 3
+                    elif type(obj) is bool:
+                        obj = NInt(obj)
+                        typ = 4
+
+                    val = values[idx] if not hasattr(values[idx], 'decode') else values[idx].decode()
+                    print("DESERIALIZED VALUES FOR %s: %s" % (self.getName(), values))
+                    print("VALUE = %s, PROPERTY = %s.%s" % (obj, self.getName(), prop))
+                    # assert obj, "Error: %s.%s is not properly initialized, but was serialized previously." % (self.__class__.__name__, prop)
 
                     if hasattr(obj, '__reader__'):
                         # print(prop, val)
@@ -141,11 +179,21 @@ class NObject(object):
 
                             # Make sure to offset the read index, as the order is sensitive.
                             # Objects MUST be deserialized in the exact order they were serialized.
-                            idx += endArray+1
+                            idx += endArray + 1
 
-                        else:
-                            obj.__binaryreader__(val)
-                            idx += 1
+                        elif val == 'object_begin':
+                            endObject = values.index('object_end'.encode()); assert endObject != -1  # should never be false
+                            dt = values[idx+1:endObject]
+                            obj.__binaryreader__(dt)
+                            idx += endObject + 1
+                    else:
+                        assert 0, '%s' % obj.__class__.__name__
+
+                    if typ != 0:
+                        d = {1: str, 2: float, 3: int, 4: bool}
+                        # Explicit cast from the mutable NNumeric to the actual property,
+                        # because these defaults are NOT mutable and therefore are unaffected by NArchive.
+                        setattr(self, prop, d[typ](obj))
 
         GA.swapInstanceKey(prevUUID)
 
@@ -157,4 +205,4 @@ class NObject(object):
         return 1
 
     def __str__(self):
-        return "%s with ID %s" % (self.__class__.__name__, self.getUUID())
+        return "(%s) %s with ID %s" % (self.getName(), self.__class__.__name__, self.getUUID())

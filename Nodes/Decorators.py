@@ -1,8 +1,8 @@
-import modulefinder, warnings
+import types
 import global_accessor as g_a
-from Nodes.CoreUtils import *
 
-#  ========================================== Class generators ==========================================
+#  ========================================== Class generators / Macros ==========================================
+
 
 class AttrType:
     """
@@ -27,11 +27,38 @@ def CLASS_PROP_BODY(ClassObj):
     g_a.addToGlobal(ClassObj.__class__.__name__, ClassObj.__class__)
 
 
-def NATTR(ClassObj, PropName, *args: AttrType, DESC=''):
+def NATTR(ClassObj, PropName, *args: AttrType, DESC: str = '', UPDATEHOOK=None):
+    """
+    Add extra data for a given property of a given class instance.
+    :param ClassObj: The class instance reference.
+    :param PropName: The property name. It must match the one declared within the class.
+    :param args: Attribute types <EAttrType> to add info about what can be done with a given property.
+    :param DESC: A description for this attribute. It is not required.
+    :param UPDATEHOOK: A function with no parameters that can be called when the value of this attribute is changed from the Ui.
+    :type UPDATEHOOK: Method or Function hard reference.
+    """
     if hasattr(ClassObj, '__PropFlags__'):
         data = list(args)
         data.insert(0, DESC)
+        if UPDATEHOOK:
+            assert isinstance(UPDATEHOOK, (types.MethodType, types.FunctionType))
+
+        data.insert(1, UPDATEHOOK)
         ClassObj.__PropFlags__[PropName] = tuple(data)
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
+
+def HASHOOK(ClassObj, PropName):
+    if hasattr(ClassObj, '__PropFlags__'):
+        return ClassObj.__PropFlags__.get(PropName, (None, None))[1] is not None
+    else:
+        raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
+
+
+def GET_ATTRHOOK(ClassObj, PropName):
+    if hasattr(ClassObj, '__PropFlags__'):
+        return ClassObj.__PropFlags__.get(PropName, (None, None))[1]
     else:
         raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
 
@@ -149,13 +176,20 @@ def Property(*PropTypes: EPropType, **kwargs):
 
 def ExposedMethod(funcType, **kwargs):
     """
-    Decorator for methods that do not use logic from a complex node. Use this if you wish to expose methods to the Visual Scripting.
+    Decorator for methods that do not use logic from a complex node. Use this if you wish to expose Methods or Functions to the Visual Scripting.
     """
 
     def register_wrapper(func):
-        func.__VisibleFunc__ = True
+        func.__VisibleFunc__ = kwargs.get('visible', True)
         func.__returnValues__ = kwargs
         func.__mode__ = funcType
         return func
 
     return register_wrapper
+
+
+#  ========================================== Logic Macros ==========================================
+
+
+def IsDynamicMethod(func):
+    return hasattr(func, '__VisibleFunc__') and hasattr(func, '__mode__') and hasattr(func, '__returnValues__')

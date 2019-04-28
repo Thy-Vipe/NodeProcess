@@ -91,11 +91,11 @@ class NDynamicAttr(NObject):
             self._valueChanged.execute(value)
 
     def get(self, bUpdate=True, bFromCaller=False):
-        if not bFromCaller and self._onEvaluated and self._onEvaluated.isValid():
+        if not bFromCaller and self._onEvaluated and self._onEvaluated.isValid() and bUpdate:
             self._onEvaluated()()
 
         if bUpdate and self._plugDelegate and self._plugDelegate.isBound():
-            self._value = self.check(self._plugDelegate.call())
+            self._value = self.check(self._plugDelegate.call(bUpdate=False))
 
         return self._value
 
@@ -130,7 +130,7 @@ class NDynamicAttr(NObject):
         :param o: The input value.
         :return: The casted value.
         """
-        if not o:
+        if not o and not isinstance(o, (bool, float, int)):
             return DATACLASSES[self._dataType]()
 
         if self._dataType == EDataType.DT_Variant:
@@ -180,7 +180,7 @@ class NFunctionBase(NObject):
     def registerGetters(self, getter_syntax: str = '_get_{n}'):
         """
         Call this method to automatically register all getters from a class. It is not called by default.
-        :param getter_syntax: The syntax to use to parse the getter name. Its default value is '_get{n}' with n being the original setter's name.
+        :param getter_syntax: The syntax to use to parse the getter name. Its default value is '_get_{n}' with n being the original setter's name.
         :type getter_syntax: str
         """
         properties = []
@@ -195,9 +195,4 @@ class NFunctionBase(NObject):
                 if p != prop:
                     if p.__name__.lower() == getter_name.lower():
                         REGISTER_GETTER(self, prop.__name__, p)
-
-
-
-
-
 
