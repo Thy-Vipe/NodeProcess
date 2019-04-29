@@ -195,18 +195,3 @@ class NFunctionBase(NObject):
                 if p != prop:
                     if p.__name__.lower() == getter_name.lower():
                         REGISTER_GETTER(self, prop.__name__, p)
-
-
-test = NDynamicAttr('obj', EDataType.DT_Bool, True)
-Ar = NArchive()
-Ar << test
-
-print(test)
-print(test.dataType())
-M = NMemoryReader(Ar.getData())
-
-n = NDynamicAttr('', EDataType.DT_Int, False)
-M << n
-print(n)
-print(n.dataType())
-print(n.get())

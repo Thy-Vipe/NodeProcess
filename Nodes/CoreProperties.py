@@ -3,7 +3,7 @@ from __future__ import division
 from functools import reduce
 import math
 from numbers import Real
-import array, struct, collections, os, subprocess, types
+import array, struct, collections, os, subprocess, warnings
 
 from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA

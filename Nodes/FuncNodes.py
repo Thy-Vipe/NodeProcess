@@ -240,7 +240,6 @@ class Condition(NFunctionBase):
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
     def condition(self, v: bool):
-        print("setting condition to %d" % v)
         self._accept = bool(v)
 
     def _get_condition(self):
@@ -505,6 +504,13 @@ class FormatString(NFunctionBase):
 
         self.fmtArgs.clear()
 
+
+class MakeIterable(NFunctionBase):
+    def __init__(self, funcName):
+        super(MakeIterable, self).__init__(funcName, None, EFuncType.FT_Pure)
+
+        NATTR(self, 'iterable', )
+        self.iterable = []
 
 @ExposedMethod(EFuncType.FT_Pure, result=str)
 def toString(val):
