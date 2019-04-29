@@ -1,4 +1,5 @@
-from Nodes.CoreObject import NObject, NWeakRef, NWeakMethod
+from Nodes.CoreObject import NObject
+from Nodes.WeakReferences import NWeakRef, NWeakMethod
 from Nodes import CoreUtils
 from Nodes.Decorators import *
 from Nodes.CoreProperties import *

@@ -4,6 +4,7 @@ from Nodes.Decorators import *
 from Delegates.InternalDelegates import *
 from Nodes.CoreProperties import *
 from Nodes.CoreObject import *
+from Nodes.WeakReferences import *
 import types
 
 
@@ -110,6 +111,7 @@ class NDynamicAttr(NObject):
             dyn = getattr(args[0], args[1]) if not isinstance(obj, NDynamicAttr) else obj
             res.append(self.getOutDelegate().bindFunction(dyn, 'set'))
             res.append(dyn.getInDelegate().bindFunction(self, 'get'))
+            dyn.set(self._value)
         elif len(args) == 2 and args[0] and isinstance(args[1], str):
             res.append(self.getOutDelegate().bindFunction(args[0], args[1]))
 

@@ -8,7 +8,7 @@ import array, struct, collections, os, subprocess, warnings
 from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA
 from Nodes.Decorators import *
-
+from Nodes.WeakReferences import NWeakRef
 
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
@@ -25,7 +25,8 @@ DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
              EDataType.DT_Script: (50, 194, 242),
              EDataType.DT_Variant: (173, 173, 173),
              EDataType.DT_Iterable: (173, 173, 173),
-             EDataType.DT_Bool: (200, 10, 0)
+             EDataType.DT_Bool: (200, 10, 0),
+             EDataType.DT_AttrRef: (59, 147, 206)
              }
 
 DATATYPES_STR = {"str": EDataType.DT_String,
@@ -515,6 +516,34 @@ class NVariant(NMutable):
 
     def type_(self):
         return self._type
+
+
+class ByRefVar(NProperty):
+    def __init__(self, obj: object = None, var: str = ''):
+        """
+        Create an object that references a property on an object.
+        :param obj: The object reference. A weak reference to this object will be created when  this class is initialized.
+            The object MUST be valid or an exception will be raised.
+        :param var: The attribute / property name string.
+        """
+        super(ByRefVar, self).__init__()
+
+        self.objectRef = NWeakRef(obj) if obj else None
+        self.property = var
+
+    def set(self, value):
+        if self.objectRef and self.objectRef.isValid():
+            setattr(self.objectRef(), self.property, value)
+            return 0
+
+        warnings.warn("ByRefVar: Object is no longer valid!", UserWarning)
+        return 1
+
+    def get(self):
+        if self.objectRef and self.objectRef.isValid():
+            print(self.objectRef())
+            return getattr(self.objectRef(), self.property)
+
 
 
 
@@ -1013,17 +1042,17 @@ class NVector(NPoint):
         x, y, z = self.x, self.y, self.z
 
         # Z axis rotation
-        if(axis[2]):
+        if axis[2]:
             x = (self.x * math.cos(angle) - self.y * math.sin(angle))
             y = (self.x * math.sin(angle) + self.y * math.cos(angle))
 
         # Y axis rotation
-        if(axis[1]):
+        if axis[1]:
             x = self.x * math.cos(angle) + self.z * math.sin(angle)
             z = -self.x * math.sin(angle) + self.z * math.cos(angle)
 
         # X axis rotation
-        if(axis[0]):
+        if axis[0]:
             y = self.y * math.cos(angle) - self.z * math.sin(angle)
             z = self.y * math.sin(angle) + self.z * math.cos(angle)
 
@@ -1072,7 +1101,8 @@ DATACLASSES = {EDataType.DT_Delegate: None,
                EDataType.DT_Script: NScript,
                EDataType.DT_Variant: NVariant,
                EDataType.DT_Iterable: list,
-               EDataType.DT_Bool: bool
+               EDataType.DT_Bool: bool,
+               EDataType.DT_AttrRef: ByRefVar
                }
 
 CLASSTYPES = {str: EDataType.DT_String,
@@ -1089,5 +1119,6 @@ CLASSTYPES = {str: EDataType.DT_String,
               NVariant: EDataType.DT_Variant,
               NVector: EDataType.DT_Vector,
               NScript: EDataType.DT_Script,
-              NBatchScript: EDataType.DT_Script
+              NBatchScript: EDataType.DT_Script,
+              ByRefVar: EDataType.DT_AttrRef
               }

@@ -441,6 +441,7 @@ class NFunctionWrapper(NFunctionBase):
             setattr(self, k, newoAttr)
             self.outputs.append(newoAttr)
 
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
     def execute(self):
         vals = map(lambda x: x.get(bFromCaller=True), self.inputs)
         res = self._methodRef(*vals)
@@ -509,8 +510,11 @@ class MakeIterable(NFunctionBase):
     def __init__(self, funcName):
         super(MakeIterable, self).__init__(funcName, None, EFuncType.FT_Pure)
 
-        NATTR(self, 'iterable', )
         self.iterable = []
+
+        NATTR(self, 'iterableRef', EAttrType.AT_ReadOnly)
+        self.iterableRef = NDynamicAttr('iterableRef', EDataType.DT_AttrRef, ByRefVar(self, 'iterable'), self, noInput=True)
+
 
 @ExposedMethod(EFuncType.FT_Pure, result=str)
 def toString(val):
@@ -565,3 +569,18 @@ def literalFloat(value: float):
 def literalStr(value: str):
     return value
 
+
+@ExposedMethod(EFuncType.FT_Callable)
+def iterable_Add(iterable: ByRefVar, value):
+    iterable.get().append(value)
+    print(iterable.get())
+
+
+@ExposedMethod(EFuncType.FT_Callable, removed=NVariant)
+def iterable_RemoveAt(iterable: ByRefVar, idx: int):
+    return iterable.get().pop(idx)
+
+
+@ExposedMethod(EFuncType.FT_Callable)
+def iterable_Extend(iterable: ByRefVar, other: list):
+    iterable.get().extend(other)
