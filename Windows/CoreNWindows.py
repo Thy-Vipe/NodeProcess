@@ -374,7 +374,6 @@ class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
             new_object = FuncNodes.NFunctionWrapper(name, classObj)
 
         if not isinstance(new_object, Error_Type):
-            print('try create node')
             new_node = NUiNodeObject(new_object.getName().toString(), new_object)
             self.parent().scene().addItem(new_node)
 
@@ -891,6 +890,11 @@ class NGraphicsScene(QtWidgets.QGraphicsScene):
             connection.source_point = connection.source.center() if connection.source else QPoint()
             connection.updatePath()
 
+    def addItem(self, item):
+        super(NGraphicsScene, self).addItem(item)
+        if isinstance(item, NUiNodeObject):
+            self.nodes[item.name] = item
+
 
 class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
     sg_Moved = QtCore.Signal(QtWidgets.QWidget, QtCore.QPoint)
@@ -938,7 +942,6 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
         elif state == EAttrChange.AC_Added and typ:
             self._internal_addAttr(attr, -1, True if mode in (0, 2) else False, True if mode in (0, 1) else False, typ)
 
-
     @property
     def height(self):
         """
@@ -955,7 +958,7 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
             return self.baseHeight
 
     def _initializeAttrs(self):
-        for prop in dir(self._wrappedNode):
+        for prop in self._wrappedNode.getExposedProps():
             item = getattr(self._wrappedNode, prop)
             itemInfo = self._wrappedNode.__PropFlags__.get(prop, ())
             if callable(item):
@@ -1072,18 +1075,17 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
         Make sure that all the connections to this node are also removed
         in the process
         """
-        print(self.scene().nodes)
         self.scene().nodes.pop(self.name)
 
-        # Remove all sockets connections.
-        for socket in self.sockets.values():
-            while len(socket.connections) > 0:
-                socket.connections[0]._remove()
+        # Remove all connections.
+        for k, v in self._exposedAttributes.items():
+            p = v.getPlug()
+            s = v.getSocket()
+            if p:
+                p().disconnect()
+            if s:
+                s().disconnect()
 
-        # Remove all plugs connections.
-        for plug in self.plugs.values():
-            while len(plug.connections) > 0:
-                plug.connections[0]._remove()
 
         # Remove node.
         scene = self.scene()
@@ -1432,8 +1434,11 @@ class SlotItem(QtWidgets.QGraphicsItem):
         if len(self.connected_slots) >= self.maxConnections and self.maxConnections > 0:
             return False
 
-        # no connection with different types unless marked as NVariant
-        if slot_item.dataType != self.dataType and self.dataType != EDataType.DT_Variant and slot_item.dataType != EDataType.DT_Variant:
+        # no connection with different types unless marked as NVariant or being Attr Ref and iterable
+        if slot_item.dataType != self.dataType \
+                and self.dataType != EDataType.DT_Variant \
+                and slot_item.dataType != EDataType.DT_Variant\
+                and (slot_item.dataType != EDataType.DT_AttrRef and self.dataType != EDataType.DT_Iterable):
             return False
 
         # otherwise, all fine.
@@ -1575,9 +1580,8 @@ class SlotItem(QtWidgets.QGraphicsItem):
         if nodzInst.drawingConnection:
             if self.parentItem() == nodzInst.currentHoveredNode:
                 painter.setBrush(QtGui.QColor(0, 0, 175)) # @TODO Add from config here too. Currently blue thing
-                bVariant = self.dataType == EDataType.DT_Variant or nodzInst.sourceSlot.dataType == EDataType.DT_Variant
                 if self.slotType == nodzInst.sourceSlot.slotType or (self.slotType != nodzInst.sourceSlot.slotType and
-                                                                     self.dataType != nodzInst.sourceSlot.dataType) and not bVariant:
+                                                                     not self.accepts(nodzInst.sourceSlot)):
                     painter.setBrush(QtGui.QColor(128, 36, 36)) # not good
                 else:
                     _penValid = QtGui.QPen()
@@ -1602,7 +1606,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
     def connect(self, other, connection):
         pass
 
-    def disconnect(self, connection):
+    def disconnect(self, connection=None):
         pass
 
 
@@ -1651,6 +1655,9 @@ class PlugItem(SlotItem):
         """
         width = height = self.parentItem().attrHeight / 2.0
 
+        if not self.scene():
+            return QtCore.QRect(0,0,0,0)
+
         nodzInst = self.scene().views()[0]
         # config = nodzInst.config
 
@@ -1688,25 +1695,40 @@ class PlugItem(SlotItem):
         nodzInst = self.scene().views()[0]
         # nodzInst.signal_PlugConnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
-    def disconnect(self, connection):
+    def disconnect(self, connection=None):
         """
         Disconnect the given connection from this plug item.
         """
         # Emit signal.
-        nodzInst = self.scene().views()[0]
+        # nodzInst = self.scene().views()[0]
         # nodzInst.signal_PlugDisconnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
         # Remove connected socket from plug
-        if connection.socketItem in self.connected_slots:
-            self.connected_slots.remove(connection.socketItem)
-        # Remove connection
-        for cwf in connection.funcConnections:
-            if cwf.isValid():
-                cwf().kill()
+        if connection is not None:
+            if connection.socketItem in self.connected_slots:
+                self.connected_slots.remove(connection.socketItem)
+            # Remove connection
+            for cwf in connection.funcConnections:
+                if cwf.isValid():
+                    cwf().kill()
 
-        connection.funcConnections = []
+            connection.funcConnections = []
 
-        self.connections.remove(connection)
+            self.connections.remove(connection)
+            self.scene().removeItem(connection)
+        else:
+            scene = self.scene()
+            for c in self.connections:
+                if c in self.connected_slots:
+                    self.connected_slots.remove(c.socketItem)
+
+                for cwf in c.funcConnections:
+                    if cwf.isValid():
+                        cwf().kill()
+
+                scene.removeItem(c)
+
+            self.connections.clear()
 
 
 class SocketItem(SlotItem):
@@ -1789,7 +1811,7 @@ class SocketItem(SlotItem):
         nodzInst = self.scene().views()[0]
         # nodzInst.signal_SocketConnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
-    def disconnect(self, connection):
+    def disconnect(self, connection=None):
         """
         Disconnect the given connection from this socket item.
         """
@@ -1798,15 +1820,30 @@ class SocketItem(SlotItem):
         # nodzInst.signal_SocketDisconnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
         # Remove connected plugs
-        if connection.plugItem in self.connected_slots:
-            self.connected_slots.remove(connection.plugItem)
-        # Remove connections
-        for cwf in connection.funcConnections:
-            if cwf.isValid():
-                cwf().kill()
+        if connection is not None:
+            if connection.plugItem in self.connected_slots:
+                self.connected_slots.remove(connection.plugItem)
+            # Remove connections
+            for cwf in connection.funcConnections:
+                if cwf.isValid():
+                    cwf().kill()
 
+            self.connections.remove(connection)
+            self.scene().removeItem(connection)
 
-        self.connections.remove(connection)
+        else:
+            scene = self.scene()
+            for c in self.connections:
+                if c in self.connected_slots:
+                    self.connected_slots.remove(c.socketItem)
+
+                for cwf in c.funcConnections:
+                    if cwf.isValid():
+                        cwf().kill()
+
+                scene.removeItem(c)
+
+            self.connections.clear()
 
 
 class NConnection(QtWidgets.QGraphicsPathItem):
@@ -1908,7 +1945,7 @@ class NConnection(QtWidgets.QGraphicsPathItem):
         # config = nodzInst.config
 
         mbb = UCoreUtils.createPointerBoundingBox(pointerPos=event.scenePos().toPoint(),
-                                              bbSize=10)
+                                              bbSize=20)
 
         # Get nodes in pointer's bounding box.
         targets = self.scene().items(mbb)
@@ -1984,8 +2021,9 @@ class NConnection(QtWidgets.QGraphicsPathItem):
             self.target.disconnect(self)
 
         scene = self.scene()
-        scene.removeItem(self)
-        scene.update()
+        # scene.removeItem(self)
+        if scene:
+            scene.update()
 
     def updatePath(self):
         """

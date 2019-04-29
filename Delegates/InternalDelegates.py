@@ -77,6 +77,9 @@ class BoundMethod(object):
         self._FuncRef = NWeakMethod(funcObj) if funcObj else None
         pass
 
+    def __del__(self):
+        print("Destroying %s" % str(self))
+
 
 class Delegate(NObject):
     """

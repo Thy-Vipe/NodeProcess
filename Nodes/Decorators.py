@@ -27,7 +27,7 @@ def CLASS_PROP_BODY(ClassObj):
     g_a.addToGlobal(ClassObj.__class__.__name__, ClassObj.__class__)
 
 
-def NATTR(ClassObj, PropName, *args: AttrType, DESC: str = '', UPDATEHOOK=None):
+def NATTR(ClassObj, PropName, *args: AttrType, DESC: str = '', UPDATEHOOK=None, pos: int = 100):
     """
     Add extra data for a given property of a given class instance.
     :param ClassObj: The class instance reference.
@@ -36,6 +36,8 @@ def NATTR(ClassObj, PropName, *args: AttrType, DESC: str = '', UPDATEHOOK=None):
     :param DESC: A description for this attribute. It is not required.
     :param UPDATEHOOK: A function with no parameters that can be called when the value of this attribute is changed from the Ui.
     :type UPDATEHOOK: Method or Function hard reference.
+    :param pos: The position in which to display this attribute. (from top to bottom), with -1 being a normal add regardless of the order.
+    :type pos: int.
     """
     if hasattr(ClassObj, '__PropFlags__'):
         data = list(args)
@@ -44,6 +46,7 @@ def NATTR(ClassObj, PropName, *args: AttrType, DESC: str = '', UPDATEHOOK=None):
             assert isinstance(UPDATEHOOK, (types.MethodType, types.FunctionType))
 
         data.insert(1, UPDATEHOOK)
+        data.insert(2, pos)
         ClassObj.__PropFlags__[PropName] = tuple(data)
     else:
         raise AttributeError("%s does not use the generator macro CLASS_BODY()." % ClassObj.__class__.__name__)
@@ -119,25 +122,25 @@ def GET_HOOK(ClassObj, PropName: str):
 
 
 class EAttrType:
-    AT_Persistent = -1
-    AT_Serializable = 0
-    AT_ReadOnly = 1
-    AT_WriteOnly = 2
-    AT_ReadWrite = 3
-    AT_MulticastDelegate = 4
-    AT_SingleCastDelegate = 5
-    AT_Getter = 6
-    AT_kSlot = 7
-    AT_Blacklisted = 8
+    AT_Persistent = 'persistent'
+    AT_Serializable = 'serializable'
+    AT_ReadOnly = 'readOnly'
+    AT_WriteOnly = 'writeOnly'
+    AT_ReadWrite = 'readWrite'
+    AT_MulticastDelegate = 'MCDelegate'
+    AT_SingleCastDelegate = 'SCDelegate'
+    AT_Getter = 'getter'
+    AT_kSlot = 'kSlot'
+    AT_Blacklisted = 'blacklist'
 
 
 class EPropType:
-    PT_Input = 0
-    PT_Output = 1
-    PT_FuncDelegateIn = 2
-    PT_FuncDelegateOut = 3
-    PT_Readable = 4
-    PT_Internal = 5
+    PT_Input = 'input'
+    PT_Output = 'ouput'
+    PT_FuncDelegateIn = 'delegateIn'
+    PT_FuncDelegateOut = 'delegateOut'
+    PT_Readable = 'readable'
+    PT_Internal = 'internal'
 
 
 class EDataType:
@@ -168,6 +171,9 @@ def Property(*PropTypes: EPropType, **kwargs):
         Values = list(PropTypes)
         Values.append(EPropType.PT_Readable)
         func.propTypes = tuple(Values)
+        if kwargs.get('pos', False) is False:
+            kwargs['pos'] = 100
+
         func.extra_data = kwargs
         func.propertyDelegate = None  # Can be used when dynamically connected, by spawning a dynamic delegate and referencing it here.
         return func

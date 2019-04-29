@@ -22,10 +22,10 @@ class Print(NFunctionBase):
     def __init__(self, funcName):
         super(Print, self).__init__(funcName, None, EFuncType.FT_Callable)
 
-        NATTR(self, 'inputStr', EAttrType.AT_ReadWrite, EAttrType.AT_Serializable)
+        NATTR(self, 'inputStr', EAttrType.AT_ReadWrite, EAttrType.AT_Serializable, pos=1)
         self.inputStr = NDynamicAttr('input string', EDataType.DT_String, '', self)
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         print(self.inputStr.get())
         self.then()
@@ -50,22 +50,22 @@ class PyScript(NFunctionBase):
     def _get_script(self):
         return self._rawScript
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         if isinstance(self._script, NBatchScript):
             self.updateCode()  # re-evaluate the script if type is batch script, to parse the proper data.
         self._script.exec()
         self.then()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Script)
-    def script(self, string: (str, NScript)):
-        assert isinstance(string, (str, NScript)), "input is not str or NScript. Input is %s" % string.__class__.__name__
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Script, pos=1)
+    def script(self, inString: (str, NScript)):
+        assert isinstance(string, (str, NScript)), "input is not str or NScript. Input is %s" % inString.__class__.__name__
 
-        if isinstance(string, NScript):
-            self._script = string
-            self._rawScript = string.getCode()
+        if isinstance(inString, NScript):
+            self._script = inString
+            self._rawScript = inString.getCode()
         elif isinstance(string, str):
-            self._rawScript = string
+            self._rawScript = inString
 
         self.findInputs()
 
@@ -154,16 +154,16 @@ class ForLoop(NFunctionBase):
         self.start = NDynamicAttr('start', EDataType.DT_Int, NInt(0), self)
         self.end = NDynamicAttr('end', EDataType.DT_Int, NInt(10), self)
 
-        NATTR(self, 'index', EAttrType.AT_ReadOnly)
+        NATTR(self, 'index', EAttrType.AT_ReadOnly, pos=2)
         self.index = NDynamicAttr('index', EDataType.DT_Int, NInt(0), self, noInput=True)
 
         REGISTER_HOOK(self, 'loop', self._loopDelegate)
 
-    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=1)
     def loop(self):
         self._loopDelegate.execute()
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         s, e = self.start.get().get(), self.end.get().get()
         for idx in range(s, e):
@@ -171,6 +171,10 @@ class ForLoop(NFunctionBase):
             self.loop()
 
         self.then()
+
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=3)
+    def then(self):
+        super(ForLoop, self).then()
 
 
 class ForEachLoop(NFunctionBase):
@@ -180,23 +184,26 @@ class ForEachLoop(NFunctionBase):
         self._loopDelegate = DelegateSingle("loopDelegate_%s" % self.getName(), self)
         self._counter = []
 
-        NATTR(self, 'value', EAttrType.AT_ReadOnly)
+        NATTR(self, 'value', EAttrType.AT_ReadOnly, pos=3)
         self.value = NDynamicAttr('value', EDataType.DT_Variant, None, self)
 
-        NATTR(self, 'index', EAttrType.AT_ReadOnly)
+        NATTR(self, 'index', EAttrType.AT_ReadOnly, pos=4)
         self.index = NDynamicAttr('index', EDataType.DT_Int, NInt(0), self, noInput=True)
 
         REGISTER_HOOK(self, 'loop', self._loopDelegate)
 
-    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=2)
     def loop(self):
         self._loopDelegate.execute()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Iterable)
-    def iterable(self, it: (list, tuple, collections.UserList)):
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Iterable, pos=1)
+    def iterable(self, it: (list, tuple, collections.UserList, ByRefVar)):
+        if isinstance(it, ByRefVar):
+            it = it.get()
+
         self._counter = map(lambda x: NVariant(x), it)
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         idx = 0
         for item in self._counter:
@@ -205,17 +212,20 @@ class ForEachLoop(NFunctionBase):
             self.loop()
             idx += 1
 
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=5)
+    def then(self):
+        super(ForEachLoop, self).then()
+
 
 class Condition(NFunctionBase):
     def __init__(self, funcName):
         super(Condition, self).__init__(funcName, None, EFuncType.FT_Callable)
 
-        self._accept = False
+        NATTR(self, 'condition', EAttrType.AT_WriteOnly, pos=1)
+        self.condition = NDynamicAttr('condition', EDataType.DT_Bool, False, self)
 
         self.trueDelegate = DelegateSingle('trueDelegate_%s' % self.getName(), self)
         self.falseDelegate = DelegateSingle('trueDelegate_%s' % self.getName(), self)
-
-        self.registerGetters()
 
         REGISTER_HOOK(self, 'true', self.trueDelegate)
         REGISTER_HOOK(self, 'false', self.falseDelegate)
@@ -223,27 +233,21 @@ class Condition(NFunctionBase):
     def then(self):
         pass
 
-    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=2)
     def true(self):
         self.trueDelegate.execute()
 
-    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=3)
     def false(self):
         self.falseDelegate.execute()
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
-        if self._accept:
+        if self.condition.get():
             self.true()
         else:
             self.false()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
-    def condition(self, v: bool):
-        self._accept = bool(v)
-
-    def _get_condition(self):
-        return self._accept
 
 
 class Reroute(NFunctionBase):
@@ -259,15 +263,15 @@ class ReadDir(NFunctionBase):
 
         self._bRecursive = False
 
-        NATTR(self, 'result', EAttrType.AT_ReadOnly, DESC="The output, an iterable of strings representing full path to a file.")
+        NATTR(self, 'result', EAttrType.AT_ReadOnly, DESC="The output, an iterable of strings representing full path to a file.", pos=3)
         self.result = NDynamicAttr('result', EDataType.DT_Iterable, [], self, noInput=True)
 
-        NATTR(self, 'directory', EAttrType.AT_ReadWrite, DESC="The read directory, a full path.")
+        NATTR(self, 'directory', EAttrType.AT_ReadWrite, DESC="The read directory, a full path.", pos=1)
         self.directory = NDynamicAttr('directory', EDataType.DT_String, '', self)
 
         self.registerGetters()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool)
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool, pos=2)
     def isRecursive(self, v: bool):
         """
         When true, find all sub-folders' files from the provided directory. It can be a slow operation.
@@ -277,7 +281,7 @@ class ReadDir(NFunctionBase):
     def _get_isRecursive(self):
         return self._bRecursive
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         self.result.set(self.goThroughDir(self.directory.get()))
         self.then()
@@ -311,7 +315,7 @@ class RenameFile(NFunctionBase):
 
         self.registerGetters()
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         fp = str(self.file.get())
         path = fp.rsplit('\\', 1)[0]
@@ -360,18 +364,18 @@ class MoveToDir(NFunctionBase):
         super(MoveToDir, self).__init__(funcName, EFuncType.FT_Callable)
 
         NATTR(self, 'src', EAttrType.AT_Serializable, EAttrType.AT_ReadWrite,
-              DESC="The source path, can be either\n a directory or a file")
+              DESC="The source path, can be either\n a directory or a file", pos=1)
         self.src = NDynamicAttr('src', EDataType.DT_String, '', self)
 
         NATTR(self, 'dst', EAttrType.AT_Serializable, EAttrType.AT_ReadWrite,
-              DESC="The destination path. It must be a directory.")
+              DESC="The destination path. It must be a directory.", pos=2)
         self.dst = NDynamicAttr('dst', EDataType.DT_String, '', self)
 
         self._createDir = True
 
         self.registerGetters()
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
         srcPath = self.src.get().toString()
         dstPath = self.dst.get().toString()
@@ -573,7 +577,6 @@ def literalStr(value: str):
 @ExposedMethod(EFuncType.FT_Callable)
 def iterable_Add(iterable: ByRefVar, value):
     iterable.get().append(value)
-    print(iterable.get())
 
 
 @ExposedMethod(EFuncType.FT_Callable, removed=NVariant)

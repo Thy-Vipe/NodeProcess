@@ -166,12 +166,12 @@ class NFunctionBase(NObject):
         else:
             REGISTER_HOOK(self, 'then', self._thenDelegate)
 
-    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=-2)
     def execute(self):
         # print("Node executed! Do awesome logic here...")
         self.then()
 
-    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate)
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=-1)
     def then(self):
         # print("Then..call whatever needs calling.")
         self._thenDelegate.execute()
@@ -197,3 +197,31 @@ class NFunctionBase(NObject):
                 if p != prop:
                     if p.__name__.lower() == getter_name.lower():
                         REGISTER_GETTER(self, prop.__name__, p)
+
+    def getExposedProps(self):
+
+        mapping = {}
+        for attr in dir(self):
+            val = getattr(self, attr)
+            if callable(val):
+                propInfo = getattr(val, EXPOSEDPROPNAME, None)
+                propDetails = getattr(val, EXPOSED_EXTRADATA, None)
+                if propInfo and propDetails:
+                    p = propDetails['pos']
+                    keys = mapping.keys()
+                    if p in keys:
+                        p = max(keys) + 1
+                    mapping[p] = attr
+
+            elif isinstance(val, NDynamicAttr):
+                info = self.__PropFlags__.get(attr, (None, None, -1))
+                p = info[2]
+                keys = mapping.keys()
+                if p in mapping.keys():
+                    p = max(keys) + 1
+                mapping[p] = attr
+
+        keys = list(mapping.keys())
+        keys.sort()
+
+        return [mapping[idx] for idx in keys]

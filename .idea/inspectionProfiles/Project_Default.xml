@@ -42,6 +42,7 @@
           <option value="Nodes.CoreObject.NObject.__PropHooks__" />
           <option value="Windows.CoreNWindows.NUiNodeObject" />
           <option value="Nodes.Core.NFunctionBase.__PropHooks__" />
+          <option value="Nodes.Core.NFunctionBase.__PropFlags__" />
         </list>
       </option>
     </inspection_tool>

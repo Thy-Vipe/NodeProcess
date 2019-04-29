@@ -544,6 +544,9 @@ class ByRefVar(NProperty):
             print(self.objectRef())
             return getattr(self.objectRef(), self.property)
 
+    def __str__(self):
+        return str(self.get())
+
 
 
 
