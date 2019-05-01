@@ -52,6 +52,7 @@ class PyScript(NFunctionBase):
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
+        self.evaluate()
         if isinstance(self._script, NBatchScript):
             self.updateCode()  # re-evaluate the script if type is batch script, to parse the proper data.
         self._script.exec()
@@ -59,12 +60,12 @@ class PyScript(NFunctionBase):
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Script, pos=1)
     def script(self, inString: (str, NScript)):
-        assert isinstance(string, (str, NScript)), "input is not str or NScript. Input is %s" % inString.__class__.__name__
+        assert isinstance(inString, (str, NScript)), "input is not str or NScript. Input is %s" % inString.__class__.__name__
 
         if isinstance(inString, NScript):
             self._script = inString
             self._rawScript = inString.getCode()
-        elif isinstance(string, str):
+        elif isinstance(inString, str):
             self._rawScript = inString
 
         self.findInputs()
@@ -205,12 +206,15 @@ class ForEachLoop(NFunctionBase):
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
+        self.evaluate()
         idx = 0
         for item in self._counter:
             self.value.set(item)
             self.index.set(idx)
             self.loop()
             idx += 1
+
+        self.then()
 
     @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=5)
     def then(self):
@@ -587,3 +591,8 @@ def iterable_RemoveAt(iterable: ByRefVar, idx: int):
 @ExposedMethod(EFuncType.FT_Callable)
 def iterable_Extend(iterable: ByRefVar, other: list):
     iterable.get().extend(other)
+
+
+@ExposedMethod(EFuncType.FT_Callable)
+def iterable_Clear(iterable: ByRefVar):
+    iterable.get().clear()

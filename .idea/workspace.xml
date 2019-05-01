@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="df7f8423-16d8-4738-ae80-728350c28d75" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Delegates/InternalDelegates.py" beforeDir="false" afterPath="$PROJECT_DIR$/Delegates/InternalDelegates.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/Core.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/CoreProperties.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/CoreProperties.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes/Decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Decorators.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/FuncNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/FuncNodes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Windows/CoreNWindows.py" beforeDir="false" afterPath="$PROJECT_DIR$/Windows/CoreNWindows.py" afterDir="false" />
     </list>
@@ -21,8 +18,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="215" column="47" selection-start-line="215" selection-start-column="47" selection-end-line="215" selection-end-column="47" />
+            <state relative-caret-position="482">
+              <caret line="241" column="51" selection-start-line="241" selection-start-column="51" selection-end-line="241" selection-end-column="51" />
+              <folding>
+                <element signature="e#1#32#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -30,7 +30,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
+            <state relative-caret-position="459">
               <caret line="34" selection-start-line="34" selection-end-line="34" />
             </state>
           </provider>
@@ -39,8 +39,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="189" column="58" selection-start-line="189" selection-start-column="58" selection-end-line="189" selection-end-column="58" />
+            <state relative-caret-position="584">
+              <caret line="195" selection-start-line="195" selection-end-line="195" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -51,11 +51,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Nodes/FuncNodes.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-5109">
-              <caret line="227" column="85" selection-start-line="227" selection-start-column="85" selection-end-line="227" selection-end-column="85" />
+            <state relative-caret-position="240">
+              <caret line="64" column="41" lean-forward="true" selection-start-line="64" selection-start-column="41" selection-end-line="64" selection-end-column="41" />
               <folding>
                 <element signature="e#0#24#0" expanded="true" />
-                <element signature="e#9568#10008#0" />
               </folding>
             </state>
           </provider>
@@ -64,11 +63,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Delegates/InternalDelegates.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="512">
-              <caret line="80" column="41" selection-start-line="80" selection-start-column="41" selection-end-line="80" selection-end-column="41" />
-              <folding>
-                <element signature="e#0#59#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="1309">
+              <caret line="83" column="24" selection-start-line="83" selection-start-column="24" selection-end-line="83" selection-end-column="24" />
             </state>
           </provider>
         </entry>
@@ -76,7 +72,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/CoreUtils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1024">
+            <state relative-caret-position="1088">
               <caret line="79" column="24" selection-start-line="79" selection-start-column="24" selection-end-line="79" selection-end-column="24" />
               <folding>
                 <element signature="e#1607#2018#0" />
@@ -88,63 +84,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="331">
-              <caret line="2028" column="11" lean-forward="true" selection-start-line="2028" selection-start-column="11" selection-end-line="2028" selection-end-column="11" />
+            <state relative-caret-position="257">
+              <caret line="1839" lean-forward="true" selection-start-line="1839" selection-end-line="1839" />
               <folding>
                 <element signature="e#5381#10989#0" />
                 <element signature="e#12108#13495#0" />
-                <element signature="e#14854#29512#0" />
-                <element signature="e#15078#15930#0" />
-                <element signature="e#15966#17194#0" />
-                <element signature="e#17355#17814#0" />
-                <element signature="e#17862#20699#0" />
-                <element signature="e#20746#22925#0" />
-                <element signature="e#22975#25393#0" />
-                <element signature="e#25439#26037#0" />
-                <element signature="e#26085#26321#0" />
-                <element signature="e#29711#29981#0" />
-                <element signature="e#30028#30176#0" />
-                <element signature="e#30222#30370#0" />
-                <element signature="e#30412#30570#0" />
-                <element signature="e#30625#31450#0" />
-                <element signature="e#31487#31862#0" />
-                <element signature="e#32069#33109#0" />
-                <element signature="e#33154#33205#0" />
-                <element signature="e#33316#33581#0" />
-                <element signature="e#33628#34012#0" />
-                <element signature="e#34054#35139#0" />
-                <element signature="e#35219#37624#0" />
-                <element signature="e#39608#41091#0" />
-                <element signature="e#41129#41329#0" />
-                <element signature="e#41360#41504#0" />
-                <element signature="e#41565#44630#0" />
-                <element signature="e#44673#44858#0" />
-                <element signature="e#44890#44904#0" />
-                <element signature="e#44937#44971#0" />
-                <element signature="e#45019#45397#0" />
-                <element signature="e#45451#45615#0" />
-                <element signature="e#45662#46612#0" />
-                <element signature="e#46662#46847#0" />
-                <element signature="e#46895#47149#0" />
-                <element signature="e#47179#47203#0" />
-                <element signature="e#47243#48662#0" />
-                <element signature="e#48884#50214#0" />
-                <element signature="e#51307#52109#0" />
-                <element signature="e#53248#56169#0" />
-                <element signature="e#56200#56356#0" />
-                <element signature="e#57690#57946#0" />
-                <element signature="e#58249#59057#0" />
-                <element signature="e#59103#59389#0" />
-                <element signature="e#60083#61010#0" />
-                <element signature="e#61918#62732#0" />
-                <element signature="e#62778#63064#0" />
-                <element signature="e#63102#63668#0" />
-                <element signature="e#63724#64546#0" />
-                <element signature="e#65423#66413#0" />
-                <element signature="e#66451#66728#0" />
-                <element signature="e#66980#67898#0" />
-                <element signature="e#67945#68856#0" />
-                <element signature="e#68906#70187#0" />
               </folding>
             </state>
           </provider>
@@ -153,8 +97,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/CoreProperties.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="254">
-              <caret line="533" column="25" lean-forward="true" selection-start-line="533" selection-start-column="25" selection-end-line="533" selection-end-column="25" />
+            <state relative-caret-position="2350">
+              <caret line="1035" column="49" lean-forward="true" selection-start-line="1035" selection-start-column="49" selection-end-line="1035" selection-end-column="49" />
               <folding>
                 <element signature="e#12926#16730#0" />
                 <element signature="e#16759#16896#0" />
@@ -168,7 +112,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
+            <state relative-caret-position="2448">
               <caret line="147" column="24" selection-start-line="147" selection-start-column="24" selection-end-line="147" selection-end-column="24" />
             </state>
           </provider>
@@ -177,7 +121,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
+            <state relative-caret-position="459">
               <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
             </state>
           </provider>
@@ -219,6 +163,7 @@
       <find>paint</find>
       <find>removeItem</find>
       <find>disconnect</find>
+      <find>bFromCaller</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -257,11 +202,11 @@
         <option value="$PROJECT_DIR$/Nodes/CoreUtils.py" />
         <option value="$PROJECT_DIR$/Nodes/WeakReferences.py" />
         <option value="$PROJECT_DIR$/Nodes/CoreObject.py" />
-        <option value="$PROJECT_DIR$/Nodes/Core.py" />
         <option value="$PROJECT_DIR$/Nodes/Decorators.py" />
         <option value="$PROJECT_DIR$/Delegates/InternalDelegates.py" />
         <option value="$PROJECT_DIR$/Nodes/CoreProperties.py" />
         <option value="$PROJECT_DIR$/Windows/CoreNWindows.py" />
+        <option value="$PROJECT_DIR$/Nodes/Core.py" />
         <option value="$PROJECT_DIR$/Nodes/FuncNodes.py" />
       </list>
     </option>
@@ -502,7 +447,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32932165" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.27843988" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.27843988" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39869988" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -653,9 +598,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Delegates/InternalDelegates.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1309">
+          <caret line="83" column="24" selection-start-line="83" selection-start-column="24" selection-end-line="83" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/CoreUtils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1024">
+        <state relative-caret-position="1088">
           <caret line="79" column="24" selection-start-line="79" selection-start-column="24" selection-end-line="79" selection-end-column="24" />
           <folding>
             <element signature="e#1607#2018#0" />
@@ -663,58 +615,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="34" selection-start-line="34" selection-end-line="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="215" column="47" selection-start-line="215" selection-start-column="47" selection-end-line="215" selection-end-column="47" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Delegates/InternalDelegates.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="512">
-          <caret line="80" column="41" selection-start-line="80" selection-start-column="41" selection-end-line="80" selection-end-column="41" />
-          <folding>
-            <element signature="e#0#59#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
+        <state relative-caret-position="2448">
           <caret line="147" column="24" selection-start-line="147" selection-start-column="24" selection-end-line="147" selection-end-column="24" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
+    <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="189" column="58" selection-start-line="189" selection-start-column="58" selection-end-line="189" selection-end-column="58" />
+        <state relative-caret-position="257">
+          <caret line="1839" lean-forward="true" selection-start-line="1839" selection-end-line="1839" />
           <folding>
-            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#5381#10989#0" />
+            <element signature="e#12108#13495#0" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/CoreProperties.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="254">
-          <caret line="533" column="25" lean-forward="true" selection-start-line="533" selection-start-column="25" selection-end-line="533" selection-end-column="25" />
+        <state relative-caret-position="2350">
+          <caret line="1035" column="49" lean-forward="true" selection-start-line="1035" selection-start-column="49" selection-end-line="1035" selection-end-column="49" />
           <folding>
             <element signature="e#12926#16730#0" />
             <element signature="e#16759#16896#0" />
@@ -724,76 +646,46 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
+    <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="331">
-          <caret line="2028" column="11" lean-forward="true" selection-start-line="2028" selection-start-column="11" selection-end-line="2028" selection-end-column="11" />
+        <state relative-caret-position="459">
+          <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="584">
+          <caret line="195" selection-start-line="195" selection-end-line="195" />
           <folding>
-            <element signature="e#5381#10989#0" />
-            <element signature="e#12108#13495#0" />
-            <element signature="e#14854#29512#0" />
-            <element signature="e#15078#15930#0" />
-            <element signature="e#15966#17194#0" />
-            <element signature="e#17355#17814#0" />
-            <element signature="e#17862#20699#0" />
-            <element signature="e#20746#22925#0" />
-            <element signature="e#22975#25393#0" />
-            <element signature="e#25439#26037#0" />
-            <element signature="e#26085#26321#0" />
-            <element signature="e#29711#29981#0" />
-            <element signature="e#30028#30176#0" />
-            <element signature="e#30222#30370#0" />
-            <element signature="e#30412#30570#0" />
-            <element signature="e#30625#31450#0" />
-            <element signature="e#31487#31862#0" />
-            <element signature="e#32069#33109#0" />
-            <element signature="e#33154#33205#0" />
-            <element signature="e#33316#33581#0" />
-            <element signature="e#33628#34012#0" />
-            <element signature="e#34054#35139#0" />
-            <element signature="e#35219#37624#0" />
-            <element signature="e#39608#41091#0" />
-            <element signature="e#41129#41329#0" />
-            <element signature="e#41360#41504#0" />
-            <element signature="e#41565#44630#0" />
-            <element signature="e#44673#44858#0" />
-            <element signature="e#44890#44904#0" />
-            <element signature="e#44937#44971#0" />
-            <element signature="e#45019#45397#0" />
-            <element signature="e#45451#45615#0" />
-            <element signature="e#45662#46612#0" />
-            <element signature="e#46662#46847#0" />
-            <element signature="e#46895#47149#0" />
-            <element signature="e#47179#47203#0" />
-            <element signature="e#47243#48662#0" />
-            <element signature="e#48884#50214#0" />
-            <element signature="e#51307#52109#0" />
-            <element signature="e#53248#56169#0" />
-            <element signature="e#56200#56356#0" />
-            <element signature="e#57690#57946#0" />
-            <element signature="e#58249#59057#0" />
-            <element signature="e#59103#59389#0" />
-            <element signature="e#60083#61010#0" />
-            <element signature="e#61918#62732#0" />
-            <element signature="e#62778#63064#0" />
-            <element signature="e#63102#63668#0" />
-            <element signature="e#63724#64546#0" />
-            <element signature="e#65423#66413#0" />
-            <element signature="e#66451#66728#0" />
-            <element signature="e#66980#67898#0" />
-            <element signature="e#67945#68856#0" />
-            <element signature="e#68906#70187#0" />
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="34" selection-start-line="34" selection-end-line="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="482">
+          <caret line="241" column="51" selection-start-line="241" selection-start-column="51" selection-end-line="241" selection-end-column="51" />
+          <folding>
+            <element signature="e#1#32#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/FuncNodes.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-5109">
-          <caret line="227" column="85" selection-start-line="227" selection-start-column="85" selection-end-line="227" selection-end-column="85" />
+        <state relative-caret-position="240">
+          <caret line="64" column="41" lean-forward="true" selection-start-line="64" selection-start-column="41" selection-end-line="64" selection-end-column="41" />
           <folding>
             <element signature="e#0#24#0" expanded="true" />
-            <element signature="e#9568#10008#0" />
           </folding>
         </state>
       </provider>

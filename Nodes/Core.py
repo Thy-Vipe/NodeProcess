@@ -100,6 +100,9 @@ class NDynamicAttr(NObject):
 
         return self._value
 
+    def evaluate(self):
+        self._valueChanged.execute(self._value)
+
     def hasConnection(self):
         return self._plugDelegate.isBound() if self._plugDelegate else False
 
@@ -114,6 +117,8 @@ class NDynamicAttr(NObject):
             dyn.set(self._value)
         elif len(args) == 2 and args[0] and isinstance(args[1], str):
             res.append(self.getOutDelegate().bindFunction(args[0], args[1]))
+            func = getattr(args[0], args[1])
+            func.extra_data['UpdateHook'] = NWeakRef(self)
 
         return res
 
@@ -225,3 +230,14 @@ class NFunctionBase(NObject):
         keys.sort()
 
         return [mapping[idx] for idx in keys]
+
+    def evaluate(self):
+        for item in self.getExposedProps():
+            val = getattr(self, item)
+            if callable(val):
+                propInfo = getattr(val, EXPOSEDPROPNAME, None)
+                propDetails = getattr(val, EXPOSED_EXTRADATA, None)
+                if propInfo and propDetails:
+                    setter = propDetails.get('UpdateHook', None)
+                    if setter and setter.isValid():
+                        setter().evaluate()

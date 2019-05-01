@@ -1816,7 +1816,7 @@ class SocketItem(SlotItem):
         Disconnect the given connection from this socket item.
         """
         # Emit signal.
-        nodzInst = self.scene().views()[0]
+        # nodzInst = self.scene().views()[0]
         # nodzInst.signal_SocketDisconnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
         # Remove connected plugs
@@ -1828,7 +1828,8 @@ class SocketItem(SlotItem):
                 if cwf.isValid():
                     cwf().kill()
 
-            self.connections.remove(connection)
+            if connection in self.connections:
+                self.connections.remove(connection)
             self.scene().removeItem(connection)
 
         else:
