@@ -84,6 +84,18 @@ class NProperty(object):
     def __init__(self, *args, **kwargs):
         CLASS_PROP_BODY(self)
 
+    def __jsonSerialize__(self, Serial: dict):
+        pass
+
+    def __jsonReader__(self, myDict: dict):
+        pass
+
+    def __archive__(self, Ar):
+        pass
+
+    def __reader__(self, data):
+        pass
+
 
 class NArchive(NProperty):
     """
@@ -361,6 +373,12 @@ class NMutable(NProperty):
     def __reader__(self, data):
         self._data = data
 
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['_data'] = self._data
+
+    def __jsonReader__(self, myDict: dict):
+        self._data = myDict['_data']
+
     def __repr__(self):
         return str(self._data)
 
@@ -532,22 +550,38 @@ class ByRefVar(NProperty):
         self.property = var
 
     def set(self, value):
+        if isinstance(self.objectRef, str):
+            self.__recoverObject(str(self.objectRef))
+
         if self.objectRef and self.objectRef.isValid():
             setattr(self.objectRef(), self.property, value)
             return 0
 
-        warnings.warn("ByRefVar: Object is no longer valid!", UserWarning)
+        warnings.warn("ByRefVar: referenced object is no longer valid!", UserWarning)
         return 1
 
     def get(self):
-        if self.objectRef and self.objectRef.isValid():
-            print(self.objectRef())
+        if isinstance(self.objectRef, str):
+            self.__recoverObject(str(self.objectRef))
+
+        if self.objectRef is not None and self.objectRef.isValid():
             return getattr(self.objectRef(), self.property)
 
     def __str__(self):
         return str(self.get())
 
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['linking_object'] = self.objectRef().getUUID().toString() if (self.objectRef and self.objectRef.isValid()) else None
+        Serial['linking_property'] = self.property
 
+    def __jsonReader__(self, myDict: dict):
+        self.__recoverObject(myDict['linking_object'])
+        self.property = myDict['linking_property']
+
+    def __recoverObject(self, uuid: str):
+        obj = g_a.getInstance(uuid)
+        if obj:
+            self.objectRef = NWeakRef(obj)
 
 
 class NStatus(NMutable):
@@ -587,6 +621,12 @@ class NScript(object):
         new = NString()
         new.__reader__(data)
         self._script = new.get()
+
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['script'] = self._script
+
+    def __jsonReader__(self, myDict: dict):
+        self._script = myDict['script']
 
     def setCode(self, code: str):
         self._script = code
@@ -693,6 +733,7 @@ class NArray(collections.UserList, NProperty):
         return 1
 
 
+
 class NString(collections.UserString, NProperty):
     """
     Extension of class "str" with more methods used for NodeProcess.
@@ -770,6 +811,16 @@ class NPoint2D(NProperty):
 
     def __reader__(self, data):
         self.x, self.y, self.__IsInt = data
+
+    def __jsonReader__(self, myDict: dict):
+        self.x = myDict['x']
+        self.y = myDict['y']
+        self.__IsInt = myDict['isint']
+
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['x'] = self.x
+        Serial['y'] = self.y
+        Serial['isint'] = self.__IsInt
 
     def __repr__(self):
         return "{0}({1}, {2})".format(
@@ -858,6 +909,16 @@ class NPoint(NProperty):
     def __reader__(self, data):
         self.x, self.y, self.z = data
 
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['x'] = self.x
+        Serial['y'] = self.y
+        Serial['z'] = self.z
+
+    def __jsonReader__(self, myDict: dict):
+        self.x = myDict['x']
+        self.y = myDict['y']
+        self.z = myDict['z']
+
     def __repr__(self):
         return '{0}({1}, {2}, {3})'.format(
             self.__class__.__name__,
@@ -891,6 +952,13 @@ class NPoint(NProperty):
             self.x == pt.x and
             self.y == pt.y and
             self.z == pt.z
+        )
+
+    def equals(self, pt, tolerance=1e-3):
+        return (
+            self.x - tolerance <= self.x <= self.x + tolerance and
+            self.y - tolerance <= self.y <= self.y + tolerance and
+            self.z - tolerance <= self.z <= self.z + tolerance
         )
 
     def to_list(self):

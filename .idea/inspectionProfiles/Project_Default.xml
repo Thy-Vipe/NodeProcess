@@ -43,6 +43,8 @@
           <option value="Windows.CoreNWindows.NUiNodeObject" />
           <option value="Nodes.Core.NFunctionBase.__PropHooks__" />
           <option value="Nodes.Core.NFunctionBase.__PropFlags__" />
+          <option value="Nodes.CoreObject.NObject.resizeEvent" />
+          <option value="Windows.CoreNWindows.NWidgetBase.*" />
         </list>
       </option>
     </inspection_tool>

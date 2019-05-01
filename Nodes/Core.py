@@ -70,13 +70,13 @@ class NDynamicAttr(NObject):
         NATTR(self, '_value', EAttrType.AT_Serializable)
         self._value = self.check(initialValue)
 
-        NATTR(self, '_valueChanged', EAttrType.AT_Serializable, EAttrType.AT_Persistent); NATTR(self, '_plugDelegate', EAttrType.AT_Serializable, EAttrType.AT_Persistent)
-        self._valueChanged = self._plugDelegate = None
+        NATTR(self, '_valueChanged', EAttrType.AT_Serializable, EAttrType.AT_Persistent); NATTR(self, '_sktDelegate', EAttrType.AT_Serializable, EAttrType.AT_Persistent)
+        self._valueChanged = self._sktDelegate = None
 
         self._valueChanged = DelegateMulticast("%s_ValueChangedDelegate" % self.getName(), self)
 
         if not kwargs.get('noInput', False):
-            self._plugDelegate = CollectorSingle("%s_ValueQueryListener" % self.getName(), self)
+            self._sktDelegate = CollectorSingle("%s_ValueQueryListener" % self.getName(), self)
 
         self._onEvaluated = None
         ehook = kwargs.get("EvaluationHook", None)
@@ -95,8 +95,8 @@ class NDynamicAttr(NObject):
         if not bFromCaller and self._onEvaluated and self._onEvaluated.isValid() and bUpdate:
             self._onEvaluated()()
 
-        if bUpdate and self._plugDelegate and self._plugDelegate.isBound():
-            self._value = self.check(self._plugDelegate.call(bUpdate=False))
+        if bUpdate and self._sktDelegate and self._sktDelegate.isBound():
+            self._value = self.check(self._sktDelegate.call(bUpdate=False))
 
         return self._value
 
@@ -104,7 +104,7 @@ class NDynamicAttr(NObject):
         self._valueChanged.execute(self._value)
 
     def hasConnection(self):
-        return self._plugDelegate.isBound() if self._plugDelegate else False
+        return self._sktDelegate.isBound() if self._sktDelegate else False
 
     def connect(self, *args):
         # from -> to ex output.connect(input)
@@ -126,7 +126,7 @@ class NDynamicAttr(NObject):
         return self._valueChanged
 
     def getInDelegate(self):
-        return self._plugDelegate
+        return self._sktDelegate
 
     def dataType(self):
         return self._dataType
@@ -183,6 +183,13 @@ class NFunctionBase(NObject):
 
     def type_(self):
         return self._funcType
+
+    def classInfo(self):
+        """
+        Can be used to get the class name. It can be overriden if specific data is expected.
+        :return a tuple with the class name, and 'None' by default. The intent is to specify a value there if the base class is a wrapper.
+        """
+        return self.__class__.__name__, 0
 
     def registerGetters(self, getter_syntax: str = '_get_{n}'):
         """
@@ -241,3 +248,11 @@ class NFunctionBase(NObject):
                     setter = propDetails.get('UpdateHook', None)
                     if setter and setter.isValid():
                         setter().evaluate()
+
+    def update(self):
+        """
+        Update is called after a node was deserialized. It is meant to be overridden if the data that the node holds
+        possibly changes the state of the node (by adding attributes, for instance),
+        in which case this function should be overridden to regenerate the attributes.
+        """
+        pass

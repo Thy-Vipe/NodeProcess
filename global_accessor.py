@@ -20,13 +20,13 @@ def findClass(typ):
 
 def addInstance(obj):
     global classInstances
-    print('registering new object: %s, name: %s' % (obj, obj.getName().toString()))
-    classInstances[obj.getUUID()] = obj
+    print('registering new object: %s' % obj)
+    classInstances[obj.getUUID().toString()] = obj
 
 
 def getInstance(uuid):
     global classInstances
-    return classInstances.get(uuid, None)
+    return classInstances.get(str(uuid), None)
 
 
 def killInstance(uuid):
@@ -49,10 +49,11 @@ def getInstanceByName(name: str):
 def swapInstanceKey(olduuid):
     global classInstances
     assert isinstance(olduuid, (str, collections.UserString))
-    ptr = classInstances.get(olduuid, None)
+
+    ptr = classInstances.get(str(olduuid), None)
 
     if ptr:
-        classInstances[ptr.getUUID()] = ptr
+        classInstances[ptr.getUUID().toString()] = ptr
         classInstances.pop(olduuid)
     else:
         warnings.warn("%s no longer exists or is not valid." % olduuid, RuntimeWarning)
@@ -69,7 +70,7 @@ def registerFunction(function):
         functionClasses[function.__name__] = function
 
 
-def funcInstances(classType):
+def objectInstances(classType):
     global classInstances
     result = []
     for k, v in classInstances.items():

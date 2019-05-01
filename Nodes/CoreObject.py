@@ -38,13 +38,19 @@ class NObject(object):
         return self._uuid.copy()
 
     def setUUID(self, inUUID):
-        self._uuid = inUUID
+        if type(inUUID) is NString:
+            self._uuid = inUUID
+        else:
+            self._uuid = NString(inUUID)
 
     def getName(self):
         return self._name.copy()
 
-    def setName(self, inName):
-        self._name = inName
+    def setName(self, inName: (str, NString)):
+        if type(inName) is NString:
+            self._name = inName
+        else:
+            self._name = NString(str(inName))
 
     def getOwner(self):
         """
@@ -179,5 +185,35 @@ class NObject(object):
 
         return 1
 
+    def __jsonSerialize__(self, Serial: dict):
+
+        objDict = {}
+        for prop in dir(self):
+            flags = self.__PropFlags__.get(prop, ())
+            if EAttrType.AT_Serializable in flags:
+                value = getattr(self, prop)
+                if hasattr(value, '__jsonSerialize__'):
+                    nestedObj = {}
+                    value.__jsonSerialize__(nestedObj)
+                    objDict[prop] = nestedObj
+                elif isinstance(value, (int, str, dict, list, tuple, float, bool)):
+                    objDict[prop] = value
+
+        Serial[self.getUUID()] = objDict
+
+    def __jsonReader__(self, myDict: dict):
+        prevUUID = self._uuid.copy()
+
+        for prop in dir(self):
+            flags = self.__PropFlags__.get(prop, ())
+            if EAttrType.AT_Serializable in flags:
+                value = getattr(self, prop)
+                if hasattr(value, '__jsonReader__'):
+                    value.__jsonReader__(myDict[prop])
+                elif isinstance(value, (int, str, dict, list, tuple, float, bool)):
+                    setattr(self, prop, myDict[prop])
+
+        g_a.swapInstanceKey(prevUUID)
+
     def __str__(self):
-        return "(%s) %s with ID %s" % (self.getName(), self.__class__.__name__, self.getUUID())
+        return "\"%s\" type <'%s'> with ID %s" % (self.getName(), self.__class__.__name__, self.getUUID())

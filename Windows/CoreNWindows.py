@@ -361,10 +361,10 @@ class NCreationDialog(NWidgetBase, QtWidgets.QWidget):
         new_object = Error_Type()
 
         if type(classObj) is type:
-            new_object = classObj("%s_%d" % (text, len(GA.funcInstances(classObj))))
+            new_object = classObj("%s_%d" % (text, len(GA.objectInstances(classObj))))
 
         elif callable(classObj) and isinstance(classObj, (types.FunctionType, types.MethodType)):
-            count = GA.funcInstances(FuncNodes.NFunctionWrapper)
+            count = GA.objectInstances(FuncNodes.NFunctionWrapper)
             n = 0
             for item in count:
                 if item.getFunc().__name__ == classObj.__name__:
@@ -932,6 +932,52 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
 
         print('spawned ui node, base: %s' % baseNode)
 
+    def __jsonSerialize__(self, Serial: dict):
+        geometry = self.geometry()
+        Serial['pos'] = (geometry.x(), geometry.y())
+        Serial['name'] = self.name
+        visual_connections = []
+
+        for item in self._exposedAttributes:
+            data = {}
+            item.__jsonSerialize__(data)
+            visual_connections.append(data)
+
+        Serial['vconnections'] = visual_connections
+
+        instData = {}
+        t = 0
+        if self._wrappedNode:
+            self._wrappedNode.__jsonSerialize__(instData)
+            t = self._wrappedNode.classInfo()
+
+        Serial['nodeData'] = instData
+        Serial['nodeType'] = t
+
+    def __jsonReader__(self, myDict: dict):
+        self.setPos(QtCore.QPoint(*myDict['pos']))
+        self.name = (myDict['name'])
+
+        cls = g_a.functionClasses.get(myDict['nodeType'][0], None)
+
+        if cls:
+            if cls is FuncNodes.NFunctionWrapper:
+                funcobj = g_a.functionClasses[myDict['nodeType'][1]]
+                self._wrappedNode = cls(myDict['name'], funcobj)
+
+            else:
+                self._wrappedNode = cls(myDict['name'])
+        else:
+            raise RuntimeError("%s is not registered. Cannot deserialize data properly." % myDict['nodeType'][0])
+
+        if self._wrappedNode:
+            self._wrappedNode.__jsonReader__(myDict['nodeData'])
+            self._wrappedNode.update()
+
+        idx = 0
+        for item in self._exposedAttributes:
+            data = myDict['vconnections'][idx]
+
     def onWrappedNodeChange(self):
         print('detected wrapped node changed')
         pass
@@ -1366,6 +1412,30 @@ class NVisualAttribute(NObject):
     def dataType(self):
         return self._dataType
 
+    def __jsonSerialize__(self, Serial: dict):
+        inConnections = []
+        outConnections = []
+        Serial['name'] = self.getName().toString()
+        Serial['owningNode'] = self.getOwner().getName().toString()
+
+        if self._plug:
+            for c in self._plug.connections:
+                if all(map(lambda x: x.isValid(), c.funcConnections)):
+                    data = {}
+                    c.__jsonSerialize__(data)
+                    outConnections.append(data)
+        if self._socket:
+            for c in self._socket.connections:
+                if all(map(lambda x: x.isValid(), c.funcConnections)):
+                    data = {}
+                    c.__jsonSerialize__(data)
+                    inConnections.append(data)
+
+        Serial['inConnections'] = inConnections
+        Serial['outConnections'] = outConnections
+
+
+
 
 
 class SlotItem(QtWidgets.QGraphicsItem):
@@ -1504,7 +1574,7 @@ class SlotItem(QtWidgets.QGraphicsItem):
             target = self.scene().itemAt(event.scenePos().toPoint(), QtGui.QTransform())
 
             if not isinstance(target, SlotItem):
-                self.newConnection._remove()
+                self.newConnection.remove()
                 super(SlotItem, self).mouseReleaseEvent(event)
                 return
 
@@ -1532,9 +1602,10 @@ class SlotItem(QtWidgets.QGraphicsItem):
                         bm = delegate.bindFunction(to.owner.node(), to.attribute)
                         if bm:
                             self.newConnection.funcConnections.append(Core.NWeakRef(bm))
+                            print("Successfully created connection {0} to {1}:".format(*self.newConnection.outputConnectionData()))
                         else:
                             print("can't connect to that..")
-                            self.newConnection._remove()
+                            self.newConnection.remove()
                             # @TODO make it so that the delegate hook is automatically created. For now it needs to be predefined in the owning class.
 
 
@@ -1544,17 +1615,18 @@ class SlotItem(QtWidgets.QGraphicsItem):
                     print(bml)
                     if len(bml) != 0:
                         self.newConnection.funcConnections.extend([Core.NWeakRef(x) for x in bml])
+                        print("Successfully created connection {0} to {1}:".format(*self.newConnection.outputConnectionData()))
                     else:
                         print("can't connect to that..")
-                        self.newConnection._remove()
+                        self.newConnection.remove()
 
                 else:
-                    self.newConnection._remove()
+                    self.newConnection.remove()
 
 
                 self.newConnection.updatePath()
             else:
-                self.newConnection._remove()
+                self.newConnection.remove()
         else:
             super(SlotItem, self).mouseReleaseEvent(event)
 
@@ -1672,10 +1744,11 @@ class PlugItem(SlotItem):
     def connect(self, socket_item, connection):
         """
         Connect to the given socket_item.
+        <plug> -> <socket>
         """
-        if self.maxConnections>0 and len(self.connected_slots) >= self.maxConnections:
+        if self.maxConnections != -1 and len(self.connected_slots) >= self.maxConnections:
             # Already connected.
-            self.connections[self.maxConnections-1]._remove()
+            self.connections[self.maxConnections - 1].remove()
 
         # Populate connection.
         connection.socketItem = socket_item
@@ -1690,9 +1763,10 @@ class PlugItem(SlotItem):
         # Add connection.
         if connection not in self.connections:
             self.connections.append(connection)
+            # @TODO Make use of weak references here instead of hard references. There is a memory leak issue due to this when destroying connections.
 
         # Emit signal.
-        nodzInst = self.scene().views()[0]
+        # nodzInst = self.scene().views()[0]
         # nodzInst.signal_PlugConnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
     def disconnect(self, connection=None):
@@ -1716,6 +1790,7 @@ class PlugItem(SlotItem):
 
             self.connections.remove(connection)
             self.scene().removeItem(connection)
+            print('PLUG: removing connection %s' % str(connection))
         else:
             scene = self.scene()
             for c in self.connections:
@@ -1791,9 +1866,12 @@ class SocketItem(SlotItem):
         """
         Connect to the given plug item.
         """
-        if self.maxConnections>0 and len(self.connected_slots) >= self.maxConnections:
+        print(self.connections)
+        if self.maxConnections != -1 and len(self.connected_slots) >= self.maxConnections:
             # Already connected.
-            self.connections[self.maxConnections-1]._remove()
+            self.connections[self.maxConnections-1].remove()
+            # last.plugItem.disconnect(last)
+
 
         # Populate connection.
         connection.plugItem = plug_item
@@ -1806,9 +1884,10 @@ class SocketItem(SlotItem):
         # Add connection.
         if connection not in self.connections:
             self.connections.append(connection)
+            # @TODO Make use of weak references here instead of hard references. There is a memory leak issue due to this when destroying connections.
 
         # Emit signal.
-        nodzInst = self.scene().views()[0]
+        # nodzInst = self.scene().views()[0]
         # nodzInst.signal_SocketConnected.emit(connection.plugNode, connection.plugAttr, connection.socketNode, connection.socketAttr)
 
     def disconnect(self, connection=None):
@@ -1828,9 +1907,9 @@ class SocketItem(SlotItem):
                 if cwf.isValid():
                     cwf().kill()
 
-            if connection in self.connections:
-                self.connections.remove(connection)
+            self.connections.remove(connection)
             self.scene().removeItem(connection)
+            print('SOCKET: removing connection %s' % str(connection))
 
         else:
             scene = self.scene()
@@ -1902,12 +1981,27 @@ class NConnection(QtWidgets.QGraphicsPathItem):
         self._pen = QtGui.QPen(self.source.brush.color())
         self._pen.setWidth(5)  # @TODO Add connection radius from config here. currently '5'
 
-    def _outputConnectionData(self):
+    def outputConnectionData(self):
         """
         .
         """
         return ("{0}.{1}".format(self.plugNode, self.plugAttr),
                 "{0}.{1}".format(self.socketNode, self.socketAttr))
+
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['plugNodeName'] = self.plugNode if self.plugNode else 0
+        Serial['plugNodeUID'] = g_a.getInstanceByName(self.plugNode).getUUID().toString() if self.plugNode else 0
+        Serial['plugAttr'] = self.plugAttr
+
+        Serial['socketNodeName'] = self.socketNode
+        Serial['socketNodeUID'] = g_a.getInstanceByName(self.socketNode).getUUID().toString() if self.socketNode else 0
+        Serial['socketAttr'] = self.socketAttr
+
+        Serial['src_pos'] = (self.source_point.x(), self.source_point.y())
+        Serial['tgt_pos'] = (self.target_point.x(), self.target_point.y())
+
+    def __jsonReader__(self, myDict: dict):
+        raise RuntimeError('__jsonReader__ on %s should not be called.' % self.__class__.__name__)
 
     def mousePressEvent(self, event):
         """
@@ -1977,7 +2071,7 @@ class NConnection(QtWidgets.QGraphicsPathItem):
         slot = self.scene().itemAt(event.scenePos().toPoint(), QtGui.QTransform())
 
         if not isinstance(slot, SlotItem):
-            self._remove()
+            self.remove()
             self.updatePath()
             super(NConnection, self).mouseReleaseEvent(event)
             return
@@ -1995,7 +2089,7 @@ class NConnection(QtWidgets.QGraphicsPathItem):
 
                 self.updatePath()
             else:
-                self._remove()
+                self.remove()
 
         else:
             if slot.accepts(self.target):
@@ -2010,12 +2104,13 @@ class NConnection(QtWidgets.QGraphicsPathItem):
 
                 self.updatePath()
             else:
-                self._remove()
+                self.remove()
 
-    def _remove(self):
+    def remove(self):
         """
         Remove this Connection from the scene.
         """
+        print('removing %s' % str(self))
         if self.source is not None:
             self.source.disconnect(self)
         if self.target is not None:

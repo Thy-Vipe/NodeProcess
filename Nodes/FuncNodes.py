@@ -58,6 +58,9 @@ class PyScript(NFunctionBase):
         self._script.exec()
         self.then()
 
+    def update(self):
+        self.findInputs()
+
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Script, pos=1)
     def script(self, inString: (str, NScript)):
         assert isinstance(inString, (str, NScript)), "input is not str or NScript. Input is %s" % inString.__class__.__name__
@@ -465,6 +468,9 @@ class NFunctionWrapper(NFunctionBase):
 
     def getFunc(self):
         return self._methodRef
+
+    def classInfo(self):
+        return self.__class__.__name__, self._methodRef.__name__
 
 
 class FormatString(NFunctionBase):

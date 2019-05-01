@@ -33,6 +33,7 @@ class BoundMethod(object):
         else:
             # Mark current item for garbage collection if function reference is dead.
             ResultStatus.set(EStatus.kError)
+            return None
 
     def getFuncName(self):
         return self._FuncName
@@ -70,12 +71,32 @@ class BoundMethod(object):
         ownerObj = GA.getInstance(data[0])
         linkedObj = GA.getInstance(data[1])
         owningDel = GA.getInstance(data[2])
-        funcObj = getattr(self._ObjectRef(), data[3])
         self._Owner = NWeakRef(ownerObj) if ownerObj else None
         self._ObjectRef = NWeakRef(linkedObj) if linkedObj else None
         self._owningDelegate = NWeakRef(owningDel) if owningDel else None
+
+        funcObj = getattr(self._ObjectRef(), data[3], None)
+
         self._FuncRef = NWeakMethod(funcObj) if funcObj else None
         pass
+
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['owner'] = self._Owner().getUUID() if self._Owner and self._Owner.isValid() else "None"
+        Serial['owningDel'] = self._owningDelegate().getUUID()
+        Serial['tgtObj'] = self._ObjectRef().getUUID() if self._ObjectRef and self._ObjectRef.isValid() else "None"
+        Serial['tgtFunc'] = self._FuncName
+
+    def __jsonReader__(self, myDict: dict):
+        ownerObj = GA.getInstance(myDict['owner'])
+        linkedObj = GA.getInstance(myDict['tgtObj'])
+        owningDel = GA.getInstance(myDict['owningDel'])
+        self._Owner = NWeakRef(ownerObj) if ownerObj else None
+        self._ObjectRef = NWeakRef(linkedObj) if linkedObj else None
+        self._owningDelegate = NWeakRef(owningDel) if owningDel else None
+
+        funcObj = getattr(self._ObjectRef(), myDict['tgtFunc'], None)
+
+        self._FuncRef = NWeakMethod(funcObj) if funcObj else None
 
     def __del__(self):
         print("Destroying %s" % str(self))
@@ -203,6 +224,26 @@ class Delegate(NObject):
 
     def clearAll(self):
         self._functions.clear()
+
+    def __jsonSerialize__(self, Serial: dict):
+        Serial['name'] = self._name.toString()
+        Serial['uuid'] = self._uuid.toString()
+        connections = []
+        for c in self._functions:
+            data = {}
+            c.__jsonSerialize__(data)
+            connections.append(data)
+
+        Serial['connectedTo'] = connections
+
+    def __jsonReader__(self, myDict: dict):
+        self.setName(myDict['name'])
+        self.setUUID(myDict['uuid'])
+        oldUUID = self.getUUID()
+        for data in myDict['connectedTo']:
+            new = BoundMethod()
+            new.__jsonReader__(data)
+
 
 
 class DelegateSingle(Delegate):
