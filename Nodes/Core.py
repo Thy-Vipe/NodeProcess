@@ -96,7 +96,7 @@ class NDynamicAttr(NObject):
             self._onEvaluated()()
 
         if bUpdate and self._sktDelegate and self._sktDelegate.isBound():
-            self._value = self.check(self._sktDelegate.call(bUpdate=False))
+            self._value = self.check(self._sktDelegate.call(bUpdate=True))
 
         return self._value
 

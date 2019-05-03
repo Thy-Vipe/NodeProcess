@@ -29,6 +29,7 @@ class APPLICATION(Core.NWorld):
                 if getattr(cls, '__VisibleFunc__', False):
                     g_a.registerFunction(cls)
 
+
     @property
     def path(self):
         return os.path.realpath(os.path.dirname(__file__))
@@ -43,8 +44,10 @@ class APPLICATION(Core.NWorld):
 
 if __name__ == "__main__":
     MAIN_THREAD = NThreading.NThread('MAIN_THREAD')
+    EXEC_THREAD = NThreading.NThread('EXEC_THREAD')
     g = globals()
     g['Main_thread'] = MAIN_THREAD
+    g['Exec_thread'] = EXEC_THREAD
     script = NThreading.NScript("app = QtWidgets.QApplication(sys.argv);app_obj = APPLICATION();app_obj.spawnInterface();sys.exit(app.exec_())", g, locals())
     MAIN_THREAD.asyncTask(script)
     MAIN_THREAD.start()

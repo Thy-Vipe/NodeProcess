@@ -607,12 +607,23 @@ class NScript(object):
         self.setCode(script)
         self._globals = global_vars if global_vars else {}
         self._locals = local_vars if local_vars else {}
+        self._scriptThread = None
+        self._bAsync = False
 
         for k, v in extraVars.items():
             self._locals[k] = v
 
-    def exec(self):
-        exec(self._script, self._globals, self._locals)
+    def exec(self, bFromThread=False):
+        if not self._bAsync or bFromThread:
+            exec(self._script, self._globals, self._locals)
+
+        elif not bFromThread and self._bAsync:
+            self._scriptThread = g_a.findClass('NThread')("tempThread_%s" % id(self), bDestroyAfterWork=True)
+            self._scriptThread.bindFinishedEvent(self, '_OnFinishedKillThread')
+            self._scriptThread.asyncTask(self)
+            self._scriptThread.start()
+
+        return 0
 
     def __archive__(self, Ar):
         Ar << NString(self._script)
@@ -642,6 +653,16 @@ class NScript(object):
         for k in item:
             del self._locals[k]
 
+    def setAsync(self, v: bool):
+        self._bAsync = v
+
+    def getAsync(self):
+        return self._bAsync
+
+    def _OnFinishedKillThread(self, *args):
+        g_a.killInstance(self._scriptThread.getUUID())
+        print("Thread finished work for script %s" %self)
+
 
 class NBatchScript(NScript):
     def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
@@ -650,9 +671,21 @@ class NBatchScript(NScript):
 
         super(NBatchScript, self).__init__(script, global_vars, local_vars, **extraVars)
 
-    def exec(self):
-        r = subprocess.check_call(self._scriptdir)
-        print("Batch script <%d> finished with exit code %s." % (id(self), r))
+    def exec(self, bFromThread=False):
+        if not self._bAsync or bFromThread:
+            r = subprocess.check_call(self._scriptdir)
+            if not bFromThread:
+                print("Batch script <%d> finished with exit code %s." % (id(self), r))
+
+            return r
+
+        elif not bFromThread and self._bAsync:
+            self._scriptThread = g_a.findClass('NThread')("tempThread_%s" % id(self), bDestroyAfterWork=True)
+            self._scriptThread.bindFinishedEvent(self, '_OnFinishedKillThread')
+            self._scriptThread.asyncTask(self)
+            self._scriptThread.start()
+
+        return 0
 
     def setCode(self, code: str):
         with open(self._scriptdir, 'w') as f:
@@ -663,6 +696,10 @@ class NBatchScript(NScript):
 
     def __del__(self):
         os.remove(self._scriptdir)
+
+    def _OnFinishedKillThread(self, *args):
+        g_a.killInstance(self._scriptThread.getUUID())
+        print("Batch script <%d> finished with exit code %s." % (id(self), args[0]))
 
 
 class NArray(collections.UserList, NProperty):

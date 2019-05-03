@@ -10,7 +10,6 @@ def getReferrers(obj: object):
     result = []
     for o in gc.get_referrers(obj):
         s = gc.get_referrers(o)[0]
-        print(s)
         try:
             it = iter(s)
         except TypeError:

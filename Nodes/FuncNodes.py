@@ -61,7 +61,7 @@ class PyScript(NFunctionBase):
     def update(self):
         self.findInputs()
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Script, pos=1)
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Script, pos=2)
     def script(self, inString: (str, NScript)):
         assert isinstance(inString, (str, NScript)), "input is not str or NScript. Input is %s" % inString.__class__.__name__
 
@@ -132,6 +132,16 @@ class PyScript(NFunctionBase):
 
     def updateCode(self):
         self._script.setCode(self._cleanupStr(self._rawScript, self._blocks))
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Bool, pos=1)
+    def bAsync(self, v: bool):
+        """
+        Make this batch script execution asynchronous. This will be executed in the process thread.
+        """
+        self._script.setAsync(v)
+
+    def _get_bAsync(self):
+        return self._script.getAsync()
 
 
 class BatchScript(PyScript):
@@ -254,7 +264,6 @@ class Condition(NFunctionBase):
             self.true()
         else:
             self.false()
-
 
 
 class Reroute(NFunctionBase):
