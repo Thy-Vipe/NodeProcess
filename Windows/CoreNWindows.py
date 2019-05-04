@@ -212,7 +212,7 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
 
     def _generateItems(self):
 
-        for prop in dir(self.nodeObj()):
+        for prop in self.nodeObj().getExposedProps():
             propInst = getattr(self.nodeObj(), prop)
             propData = self.nodeObj().__PropFlags__.get(prop, ())
             if isinstance(propInst, Core.NDynamicAttr) and EAttrType.AT_ReadOnly not in propData:
@@ -531,8 +531,6 @@ class NGraphicsView(NWidgetBase, QtWidgets.QGraphicsView):
                 event.modifiers() == QtCore.Qt.NoModifier):
             self.currentState = ECurrentState.CREATE_OBJECT
             self.initMousePos = event.pos()
-            print('got right click')
-            # @TODO spawn UI object spawner here.
 
 
         # Drag view
@@ -1029,7 +1027,7 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
         pass
 
     def onWrappedNodeAttrChange(self, attr: str, state: EAttrChange, typ: EDataType = None, mode=0):
-        if state == EAttrChange.AC_Removed:
+        if state == EAttrChange.AC_Removed and attr in self.attrs:
             self._deleteAttribute(self.attrs.index(attr))
         elif state == EAttrChange.AC_Added and typ:
             self._internal_addAttr(attr, -1, True if mode in (0, 2) else False, True if mode in (0, 1) else False, typ)

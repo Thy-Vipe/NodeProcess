@@ -8,7 +8,7 @@ import array, struct, collections, os, subprocess, warnings
 from PySide2.QtCore import QPoint, QPointF
 import global_accessor as GA
 from Nodes.Decorators import *
-from Nodes.WeakReferences import NWeakRef
+from Nodes.WeakReferences import NWeakRef, NWeakMethod
 
 # Define various macros...
 EXPOSEDPROPNAME = "propTypes"
@@ -643,13 +643,15 @@ class NScript(object):
     It is fully serializable as string, but does not preserve the class references,
     and therefore needs to be spawned non-dynamically with the expected globals, locals and extras.
     """
-    def __init__(self, script, global_vars=None, local_vars=None, **extraVars):
+    def __init__(self, script, global_vars=None, local_vars=None, jobFinishedCmd=None, **extraVars):
         self._script = ''
         self.setCode(script)
         self._globals = global_vars if global_vars else {}
         self._locals = local_vars if local_vars else {}
         self._scriptThread = None
         self._bAsync = False
+
+        self.jobFinishedDelegate = NWeakMethod(jobFinishedCmd) if jobFinishedCmd else None
 
         for k, v in extraVars.items():
             self._locals[k] = v
@@ -702,7 +704,11 @@ class NScript(object):
 
     def _OnFinishedKillThread(self, *args):
         g_a.killInstance(self._scriptThread.getUUID())
-        print("Thread finished work for script %s" %self)
+
+        if self.jobFinishedDelegate and self.jobFinishedDelegate.isValid():
+            self.jobFinishedDelegate()()
+
+        print("Thread finished work for script %s" % self)
 
 
 class NBatchScript(NScript):
@@ -740,6 +746,10 @@ class NBatchScript(NScript):
 
     def _OnFinishedKillThread(self, *args):
         g_a.killInstance(self._scriptThread.getUUID())
+
+        if self.jobFinishedDelegate and self.jobFinishedDelegate.isValid():
+            self.jobFinishedDelegate()()
+
         print("Batch script <%d> finished with exit code %s." % (id(self), args[0]))
 
 

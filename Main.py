@@ -59,7 +59,7 @@ class APPLICATION(Core.NWorld):
 
     @property
     def path(self):
-        return os.path.realpath(os.path.dirname(__file__))
+        return os.path.realpath(os.path.dirname(LOCAL_DIR))
 
 
     def spawnInterface(self):
@@ -75,6 +75,7 @@ if __name__ == "__main__":
     g = globals()
     g['Main_thread'] = MAIN_THREAD
     g['Exec_thread'] = EXEC_THREAD
+    g['LOCAL_DIR'] = __file__
     script = NThreading.NScript("app = QtWidgets.QApplication(sys.argv);app_obj = APPLICATION();app_obj.spawnInterface();sys.exit(app.exec_())", g, locals())
     MAIN_THREAD.asyncTask(script)
     MAIN_THREAD.start()

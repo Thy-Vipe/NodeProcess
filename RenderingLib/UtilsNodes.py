@@ -26,13 +26,37 @@ class Seemlessman(NFunctionBase):
         self._path = os.path.dirname(os.path.realpath(__file__))
         self._dynamicAttrs = []
         self._activeUsage = ESMMode(ESMMode.TXMAKE)
+        self._config = {}
+        self._flagCmd = ''
+        self._SeemlessmanBinary = UCoreUtils.parsePath(UCoreUtils.getMainConfig()["APPLICATION"]["SeemlessmanDir"])
+        self._cmdFmt = "\"{sm}\" {flag} {cmd}"
+
+        self._jobFinishedDelegate = DelegateMulticast('%s_jobFinishedDelegate' % self.getName(), self)
+        REGISTER_HOOK(self, 'jobFinished', self._jobFinishedDelegate)
+
+        self._batchScript = NBatchScript('', jobFinishedCmd=self.jobFinished)
+        self._batchScript.setAsync(True)  # Seemlessman always runs asynchronously
 
         self.registerGetters()
         self.Usage(self._activeUsage)
 
-
+    @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
-        pass
+        self.evaluate()
+        outCmdArgs = ''
+        for item in self._dynamicAttrs:
+            dynamicAttr = getattr(self, item)
+            value = dynamicAttr.get()
+            outCmdArgs += " %s" % value
+
+        cmd = self._cmdFmt.format(sm=self._SeemlessmanBinary, flag=self._flagCmd, cmd=outCmdArgs)
+        self._batchScript.setCode(cmd)
+        self._batchScript.exec()
+        self.then()
+
+    @Property(EPropType.PT_FuncDelegateOut, dataType=EDataType.DT_Delegate, pos=1)
+    def jobFinished(self):
+        self._jobFinishedDelegate.execute()
 
     def clear(self):
         for attr in self._dynamicAttrs:
@@ -40,27 +64,34 @@ class Seemlessman(NFunctionBase):
             RNATTR(self, attr)
             delattr(self, attr)
 
-    @Property(EPropType.PT_Input, dataType=EDataType.DT_Enum, pos=1)
+        self._dynamicAttrs.clear()
+        self._flagCmd = ''
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Enum, pos=2)
     def Usage(self, val):
         mode = val.value()
         self.clear()
         with open('%s\\RenderingNodes.NConfig' % self._path, 'r') as f:
             data = json.load(f)
 
-            cfg = data[self.__class__.__name__][mode]
-            idx = 2
-            for k, v in cfg.items():
-                print(k)
-                at = CLASSTYPES[v.__class__]
-                new = NDynamicAttr(k, at, v, self)
+            self._config = data[self.__class__.__name__][mode]
+            idx = 3
+            for k, v in self._config.items():
+                if k != "flag":
+                    at = CLASSTYPES[v.__class__]
+                    new = NDynamicAttr(k, at, v, self)
 
-                NATTR(self, k, EAttrType.AT_WriteOnly, EAttrType.AT_Serializable, pos=idx)
-                setattr(self, k, new)
-                self._dynamicAttrs.append(k)
-                self.onAttributeChanged.execute(k, EAttrChange.AC_Added, new.dataType())
-                idx += 1
+                    NATTR(self, k, EAttrType.AT_WriteOnly, EAttrType.AT_Serializable, pos=idx)
+                    setattr(self, k, new)
+                    self._dynamicAttrs.append(k)
+                    self.onAttributeChanged.execute(k, EAttrChange.AC_Added, new.dataType(), mode=1)
+                    idx += 1
+                else:
+                    self._flagCmd = v
 
-        self._activeUsage = ESMMode(mode)
+        assert self._flagCmd != '', "Fatal Error: No 'flag' key provided in the configuration for %s" % mode
+
+        self._activeUsage = val
 
     def _get_Usage(self):
         return self._activeUsage

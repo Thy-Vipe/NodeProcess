@@ -1,5 +1,5 @@
-import inspect, warnings
-
+import inspect, warnings, json
+import global_accessor as ga
 from PySide2 import QtCore
 
 
@@ -81,3 +81,21 @@ class UCoreUtils:
 
         return res
 
+    @staticmethod
+    def getAppPath():
+        return ga.getInstanceByName("APPLICATION").path
+
+    @staticmethod
+    def parsePath(p):
+        r = p.replace("$APP", UCoreUtils.getAppPath())
+        # ...
+
+        return r
+
+    @staticmethod
+    def getMainConfig():
+        p = UCoreUtils.getAppPath()
+        with open("%s\\NodeProcess.config" % p, 'r') as f:
+            data = json.load(f)
+
+        return data

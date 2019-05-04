@@ -2,20 +2,24 @@
         {"TXMAKE":{
             "RMode": 1,
             "filePath": "",
-            "STMode": 1
+            "STMode": 1,
+            "flag": "-txmake"
             },
          "sho":{
-         "filePath": ""
+         "filePath": "",
+         "flag": "-sho"
          },
          "oslc":{
-         "filePath": ""
+         "filePath": "",
+         "flag": "-oslc"
          },
          "optiX": {
             "RMode": 0,
             "Padding": "AUTODETECT",
             "filePath": "",
             "firstFrame": 0,
-            "lastFrame": -1
+            "lastFrame": -1,
+            "flag": "-txmake"
             },
          "hyperion": {
             "RMode":0,
@@ -26,7 +30,8 @@
             "VarianceFile": "",
             "PassesFile": "",
             "FirstFrame": 0,
-            "lastFrame": -1
+            "lastFrame": -1,
+            "flag": "-hyperion"
          }
     }
 }
