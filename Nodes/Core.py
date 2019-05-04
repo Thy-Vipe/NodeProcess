@@ -14,8 +14,8 @@ class NWorld(NObject):
         This is the main object that is ultimately the base of every logic going on in this software.
         It runs independently from the Ui parts of the code, and handles the logical side of it.
     """
-    def __init__(self):
-        super(NWorld, self).__init__(name="Main")
+    def __init__(self, name='APPLICATION'):
+        super(NWorld, self).__init__(name=name)
         self.CPU_COUNT = multiprocessing.cpu_count()
         # Can be defined when the window is spawned.
         self._WindowReference = None
@@ -130,6 +130,9 @@ class NDynamicAttr(NObject):
 
     def dataType(self):
         return self._dataType
+
+    def dataClass(self):
+        return self._value.__class__ if self._value else None
 
     def check(self, o):
         """

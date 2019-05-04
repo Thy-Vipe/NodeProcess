@@ -1,26 +1,53 @@
 import sys, os
 from PySide2 import QtWidgets
-from Windows import NWindows as Win
-from Nodes import FuncNodes as funcs
-from Nodes import Core, CoreUtils
-from NThreads import NThreading
-import global_accessor as g_a
-import threading, types
+
 
 # Get the local path to add to sys.path to properly load custom modules.
 if __name__ == "__main__":
     lp = __file__.rsplit("/", 1)[0]; sys.path.extend([lp, lp.replace("/", "\\")]); del lp
 
+# Dependencies for Visual Scripting
+from Nodes import FuncNodes
+from MayaLib import MayaNodes
+from NukeLib import NukeNodes
+from RenderingLib import UtilsNodes
+
+from Windows import NWindows as Win
+from Nodes import Core, CoreUtils
+from NThreads import NThreading
+import global_accessor as g_a
+import threading, types
+
+
+
+"""
+# =============================================================================================
+                Define all modules to be used in the nodal system here.
+# =============================================================================================
+"""
+DEPENDENCY_LIST = [FuncNodes, MayaNodes, NukeNodes, UtilsNodes]
+
+
+
+
+
+
+
+
 
 class APPLICATION(Core.NWorld):
     def __init__(self):
-        super(APPLICATION, self).__init__()
+        super(APPLICATION, self).__init__(name='APPLICATION')
 
         APPLICATION.registerFunctions()
 
     @staticmethod
     def registerFunctions():
-        for k, cls in funcs.__dict__.items():
+        all_ = {}
+        for lib in DEPENDENCY_LIST:
+            all_.update(lib.__dict__)
+
+        for k, cls in all_.items():
             if CoreUtils.UCoreUtils.checkBases(cls, Core.NFunctionBase):
                 if not getattr(cls, 'NO_DISPLAY', False):
                     g_a.registerFunction(cls)

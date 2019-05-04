@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/Nodes/CoreProperties.py" line="659" />
+    <bookmark url="file://$PROJECT_DIR$/Nodes/CoreProperties.py" line="700" />
+    <bookmark url="file://$PROJECT_DIR$/Nodes/FuncNodes.py" line="538" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="df7f8423-16d8-4738-ae80-728350c28d75" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/MayaLib/MayaNodes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MayaLib/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/NukeLib/NukeNodes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/NukeLib/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RenderingLib/RenderingNodes.Nconfig" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RenderingLib/UtilsNodes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RenderingLib/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NThreads/NThreading.py" beforeDir="false" afterPath="$PROJECT_DIR$/NThreads/NThreading.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/Core.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Core.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/CoreProperties.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/CoreProperties.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Nodes/Decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/Decorators.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes/FuncNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes/FuncNodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/memory_handling.py" beforeDir="false" afterPath="$PROJECT_DIR$/memory_handling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Windows/CoreNWindows.py" beforeDir="false" afterPath="$PROJECT_DIR$/Windows/CoreNWindows.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,28 +32,26 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="157">
-              <caret line="152" column="29" lean-forward="true" selection-start-line="152" selection-start-column="29" selection-end-line="152" selection-end-column="29" />
+            <state relative-caret-position="1530">
+              <caret line="134" column="61" selection-start-line="134" selection-start-column="61" selection-end-line="134" selection-end-column="61" />
               <folding>
                 <element signature="e#1#32#0" expanded="true" />
-                <element signature="e#1823#5418#0" />
+                <element signature="e#250#1787#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/FuncNodes.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="273">
-              <caret line="539" selection-start-line="539" selection-end-line="539" />
+            <state relative-caret-position="255">
+              <caret line="37" column="57" selection-start-line="37" selection-start-column="57" selection-end-line="37" selection-end-column="57" />
               <folding>
                 <element signature="e#0#24#0" expanded="true" />
                 <element signature="e#112#460#0" />
                 <element signature="e#495#935#0" />
                 <element signature="e#1940#2291#0" />
-                <element signature="e#2327#4076#0" />
-                <element signature="e#4588#5045#0" />
                 <element signature="e#5231#6337#0" />
                 <element signature="e#6197#7630#0" />
                 <element signature="e#7669#8728#0" />
@@ -61,10 +68,55 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RenderingLib/UtilsNodes.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="469">
+              <caret line="52" column="23" selection-start-line="52" selection-start-column="23" selection-end-line="52" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#24#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="900">
+              <caret line="182" selection-start-line="182" selection-end-line="182" />
+              <folding>
+                <element signature="e#0#12#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RenderingLib/RenderingNodes.Nconfig">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="476">
+              <caret line="28" column="27" lean-forward="true" selection-start-line="28" selection-start-column="27" selection-end-line="28" selection-end-column="27" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/NukeLib/NukeNodes.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret selection-end-line="1" selection-end-column="29" />
+              <folding>
+                <element signature="e#0#24#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="28" column="58" lean-forward="true" selection-start-line="28" selection-start-column="58" selection-end-line="28" selection-end-column="58" />
+            <state relative-caret-position="442">
+              <caret line="26" column="3" lean-forward="true" selection-start-line="26" selection-start-column="3" selection-end-line="26" selection-end-column="3" />
               <folding>
                 <element signature="e#0#14#0" expanded="true" />
               </folding>
@@ -73,31 +125,29 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/NThreads/NThreading.py">
+        <entry file="file://$PROJECT_DIR$/global_accessor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="227">
-              <caret line="25" column="26" selection-start-line="25" selection-start-column="26" selection-end-line="25" selection-end-column="26" />
+            <state relative-caret-position="305">
+              <caret line="39" lean-forward="true" selection-start-line="39" selection-end-line="39" />
               <folding>
-                <element signature="e#0#47#0" expanded="true" />
+                <element signature="e#0#28#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="408">
-              <caret line="1206" column="37" lean-forward="true" selection-start-line="1206" selection-start-column="37" selection-end-line="1206" selection-end-column="37" />
+            <state relative-caret-position="460">
+              <caret line="129" column="36" selection-start-line="129" selection-start-column="36" selection-end-line="129" selection-end-column="36" />
               <folding>
+                <element signature="e#0#44#0" expanded="true" />
                 <element signature="e#2398#2817#0" />
                 <element signature="e#2875#3238#0" />
-                <element signature="e#3294#3583#0" />
-                <element signature="e#3647#3948#0" />
                 <element signature="e#4006#4555#0" />
                 <element signature="e#4619#4890#0" />
                 <element signature="e#4952#5317#0" />
-                <element signature="e#5381#10989#0" />
                 <element signature="e#12108#13495#0" />
               </folding>
             </state>
@@ -107,10 +157,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Nodes/CoreProperties.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1955">
-              <caret line="659" column="27" selection-start-line="659" selection-start-column="27" selection-end-line="659" selection-end-column="27" />
+            <state relative-caret-position="11548">
+              <caret line="1253" column="46" selection-start-line="1253" selection-start-column="46" selection-end-line="1253" selection-end-column="46" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
+                <element signature="e#2194#2470#0" />
                 <element signature="e#2504#9783#0" />
                 <element signature="e#9821#12221#0" />
                 <element signature="e#12255#13269#0" />
@@ -121,45 +172,6 @@
                 <element signature="e#18039#19748#0" />
                 <element signature="e#19780#20129#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/memory_handling.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/global_accessor.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="662">
-              <caret line="39" lean-forward="true" selection-start-line="39" selection-end-line="39" />
-              <folding>
-                <element signature="e#0#28#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-674">
-              <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="459">
-              <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
             </state>
           </provider>
         </entry>
@@ -237,21 +249,26 @@
         <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
         <option value="$PROJECT_DIR$/Nodes/CoreUtils.py" />
         <option value="$PROJECT_DIR$/Nodes/WeakReferences.py" />
-        <option value="$PROJECT_DIR$/Nodes/Decorators.py" />
         <option value="$PROJECT_DIR$/Nodes/CoreObject.py" />
         <option value="$PROJECT_DIR$/Delegates/InternalDelegates.py" />
         <option value="$PROJECT_DIR$/global_accessor.py" />
-        <option value="$PROJECT_DIR$/Windows/CoreNWindows.py" />
-        <option value="$PROJECT_DIR$/Nodes/Core.py" />
-        <option value="$PROJECT_DIR$/Main.py" />
         <option value="$PROJECT_DIR$/NThreads/NThreading.py" />
         <option value="$PROJECT_DIR$/memory_handling.py" />
-        <option value="$PROJECT_DIR$/Nodes/CoreProperties.py" />
+        <option value="$PROJECT_DIR$/NukeLib/NukeNodes.py" />
+        <option value="$PROJECT_DIR$/MayaLib/MayaNodes.py" />
         <option value="$PROJECT_DIR$/Nodes/FuncNodes.py" />
+        <option value="$PROJECT_DIR$/RenderingLib/RenderingNodes.config" />
+        <option value="$PROJECT_DIR$/Nodes/Decorators.py" />
+        <option value="$PROJECT_DIR$/Nodes/Core.py" />
+        <option value="$PROJECT_DIR$/Main.py" />
+        <option value="$PROJECT_DIR$/Nodes/CoreProperties.py" />
+        <option value="$PROJECT_DIR$/RenderingLib/RenderingNodes.Nconfig" />
+        <option value="$PROJECT_DIR$/RenderingLib/UtilsNodes.py" />
+        <option value="$PROJECT_DIR$/Windows/CoreNWindows.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="-7" />
     <option name="width" value="1694" />
     <option name="height" value="1047" />
@@ -279,12 +296,27 @@
             <path>
               <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
               <item name="NodeProcess" type="462c0819:PsiDirectoryNode" />
+              <item name="MayaLib" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
+              <item name="NodeProcess" type="462c0819:PsiDirectoryNode" />
               <item name="Nodes" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
               <item name="NodeProcess" type="462c0819:PsiDirectoryNode" />
               <item name="NThreads" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
+              <item name="NodeProcess" type="462c0819:PsiDirectoryNode" />
+              <item name="NukeLib" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
+              <item name="NodeProcess" type="462c0819:PsiDirectoryNode" />
+              <item name="RenderingLib" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="NodeProcess" type="b2602c69:ProjectViewProjectNode" />
@@ -487,19 +519,22 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32827735" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.27410617" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49947312" visible="true" weight="0.27410617" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39869988" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32827735" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32936078" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32827735" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50052685" side_tool="true" weight="0.27410617" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.25785482" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.config" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="more work on graphics stuff" />
@@ -624,48 +659,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3298">
-          <caret line="195" selection-start-line="195" selection-end-line="195" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Delegates/InternalDelegates.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="496">
           <caret line="285" column="36" selection-start-line="285" selection-start-column="36" selection-end-line="285" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="408">
-          <caret line="1206" column="37" lean-forward="true" selection-start-line="1206" selection-start-column="37" selection-end-line="1206" selection-end-column="37" />
-          <folding>
-            <element signature="e#2398#2817#0" />
-            <element signature="e#2875#3238#0" />
-            <element signature="e#3294#3583#0" />
-            <element signature="e#3647#3948#0" />
-            <element signature="e#4006#4555#0" />
-            <element signature="e#4619#4890#0" />
-            <element signature="e#4952#5317#0" />
-            <element signature="e#5381#10989#0" />
-            <element signature="e#12108#13495#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/global_accessor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="662">
-          <caret line="39" lean-forward="true" selection-start-line="39" selection-end-line="39" />
-          <folding>
-            <element signature="e#0#28#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -676,9 +673,33 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-674">
+          <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MayaLib/MayaNodes.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" selection-start-line="3" selection-end-line="3" />
+          <folding>
+            <element signature="e#0#24#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/NThreads/NThreading.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="227">
+        <state relative-caret-position="380">
           <caret line="25" column="26" selection-start-line="25" selection-start-column="26" selection-end-line="25" selection-end-column="26" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
@@ -686,12 +707,57 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1530">
+          <caret line="134" column="61" selection-start-line="134" selection-start-column="61" selection-end-line="134" selection-end-column="61" />
+          <folding>
+            <element signature="e#1#32#0" expanded="true" />
+            <element signature="e#250#1787#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/FuncNodes.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="37" column="57" selection-start-line="37" selection-start-column="57" selection-end-line="37" selection-end-column="57" />
+          <folding>
+            <element signature="e#0#24#0" expanded="true" />
+            <element signature="e#112#460#0" />
+            <element signature="e#495#935#0" />
+            <element signature="e#1940#2291#0" />
+            <element signature="e#5231#6337#0" />
+            <element signature="e#6197#7630#0" />
+            <element signature="e#7669#8728#0" />
+            <element signature="e#8766#8905#0" />
+            <element signature="e#8942#10541#0" />
+            <element signature="e#10581#11596#0" />
+            <element signature="e#11634#12426#0" />
+            <element signature="e#12465#14175#0" />
+            <element signature="e#14221#16458#0" />
+            <element signature="e#16360#17915#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Nodes/Decorators.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="900">
+          <caret line="182" selection-start-line="182" selection-end-line="182" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Nodes/CoreProperties.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1955">
-          <caret line="659" column="27" selection-start-line="659" selection-start-column="27" selection-end-line="659" selection-end-column="27" />
+        <state relative-caret-position="11548">
+          <caret line="1253" column="46" selection-start-line="1253" selection-start-column="46" selection-end-line="1253" selection-end-column="46" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#2194#2470#0" />
             <element signature="e#2504#9783#0" />
             <element signature="e#9821#12221#0" />
             <element signature="e#12255#13269#0" />
@@ -705,62 +771,65 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/Core.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="157">
-          <caret line="152" column="29" lean-forward="true" selection-start-line="152" selection-start-column="29" selection-end-line="152" selection-end-column="29" />
-          <folding>
-            <element signature="e#1#32#0" expanded="true" />
-            <element signature="e#1823#5418#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="28" column="58" lean-forward="true" selection-start-line="28" selection-start-column="58" selection-end-line="28" selection-end-column="58" />
+        <state relative-caret-position="442">
+          <caret line="26" column="3" lean-forward="true" selection-start-line="26" selection-start-column="3" selection-end-line="26" selection-end-column="3" />
           <folding>
             <element signature="e#0#14#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/WeakReferences.py">
+    <entry file="file://$PROJECT_DIR$/RenderingLib/UtilsNodes.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="27" column="72" selection-start-line="27" selection-start-column="72" selection-end-line="27" selection-end-column="72" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/CoreObject.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-674">
-          <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Nodes/FuncNodes.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="273">
-          <caret line="539" selection-start-line="539" selection-end-line="539" />
+        <state relative-caret-position="469">
+          <caret line="52" column="23" selection-start-line="52" selection-start-column="23" selection-end-line="52" selection-end-column="23" />
           <folding>
             <element signature="e#0#24#0" expanded="true" />
-            <element signature="e#112#460#0" />
-            <element signature="e#495#935#0" />
-            <element signature="e#1940#2291#0" />
-            <element signature="e#2327#4076#0" />
-            <element signature="e#4588#5045#0" />
-            <element signature="e#5231#6337#0" />
-            <element signature="e#6197#7630#0" />
-            <element signature="e#7669#8728#0" />
-            <element signature="e#8766#8905#0" />
-            <element signature="e#8942#10541#0" />
-            <element signature="e#10581#11596#0" />
-            <element signature="e#11634#12426#0" />
-            <element signature="e#12465#14175#0" />
-            <element signature="e#14221#16458#0" />
-            <element signature="e#16360#17915#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RenderingLib/RenderingNodes.Nconfig">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="476">
+          <caret line="28" column="27" lean-forward="true" selection-start-line="28" selection-start-column="27" selection-end-line="28" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/NukeLib/NukeNodes.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret selection-end-line="1" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#24#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/global_accessor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="305">
+          <caret line="39" lean-forward="true" selection-start-line="39" selection-end-line="39" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Windows/CoreNWindows.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="460">
+          <caret line="129" column="36" selection-start-line="129" selection-start-column="36" selection-end-line="129" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#44#0" expanded="true" />
+            <element signature="e#2398#2817#0" />
+            <element signature="e#2875#3238#0" />
+            <element signature="e#4006#4555#0" />
+            <element signature="e#4619#4890#0" />
+            <element signature="e#4952#5317#0" />
+            <element signature="e#12108#13495#0" />
           </folding>
         </state>
       </provider>

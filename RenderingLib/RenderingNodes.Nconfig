@@ -1,0 +1,32 @@
+{"Seemlessman":
+        {"TXMAKE":{
+            "RMode": 1,
+            "filePath": "",
+            "STMode": 1
+            },
+         "sho":{
+         "filePath": ""
+         },
+         "oslc":{
+         "filePath": ""
+         },
+         "optiX": {
+            "RMode": 0,
+            "Padding": "AUTODETECT",
+            "filePath": "",
+            "firstFrame": 0,
+            "lastFrame": -1
+            },
+         "hyperion": {
+            "RMode":0,
+            "Padding": "AUTODETECT",
+            "DenoisePasses": false,
+            "filter": 0,
+            "bGPU": true,
+            "VarianceFile": "",
+            "PassesFile": "",
+            "FirstFrame": 0,
+            "lastFrame": -1
+         }
+    }
+}

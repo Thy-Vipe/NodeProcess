@@ -158,6 +158,7 @@ class EDataType:
     DT_Iterable = 0x4974657261626c65
     DT_Bool = 0x426f6f6c
     DT_AttrRef = 0x41747472526566
+    DT_Enum = 0x456e756d
 
 
 def Property(*PropTypes: EPropType, **kwargs):

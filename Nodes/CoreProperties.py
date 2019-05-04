@@ -26,7 +26,8 @@ DATATYPES = {EDataType.DT_Delegate: (244, 246, 249),
              EDataType.DT_Variant: (173, 173, 173),
              EDataType.DT_Iterable: (173, 173, 173),
              EDataType.DT_Bool: (200, 10, 0),
-             EDataType.DT_AttrRef: (59, 147, 206)
+             EDataType.DT_AttrRef: (59, 147, 206),
+             EDataType.DT_Enum: (78, 135, 77)
              }
 
 DATATYPES_STR = {"str": EDataType.DT_String,
@@ -95,6 +96,46 @@ class NProperty(object):
 
     def __reader__(self, data):
         pass
+
+
+class TEnum(NProperty):
+    def __init__(self, v=0):
+        super(TEnum, self).__init__()
+        self.__v = v
+
+    def value(self):
+        return self.__v
+
+    def text(self):
+        return self.__class__.from_value(self.__v)
+
+    @classmethod
+    def from_value(cls, inValue):
+        for x in dir(cls):
+            v = getattr(cls, x)
+            if callable(v):
+                continue
+
+            if v == inValue:
+                return x
+
+    @classmethod
+    def from_text(cls, v):
+        for x in dir(cls):
+            if x == v:
+                return getattr(cls, x)
+
+    @classmethod
+    def items(cls):
+        default = dir(TEnum)
+        content = dir(cls)
+        res = []
+        for item in content:
+            if item not in default:
+                res.append((item, getattr(cls, item)))
+
+        return res
+
 
 
 class NArchive(NProperty):
@@ -673,7 +714,7 @@ class NBatchScript(NScript):
 
     def exec(self, bFromThread=False):
         if not self._bAsync or bFromThread:
-            r = subprocess.check_call(self._scriptdir)
+            r = subprocess.call(self._scriptdir, shell=False, stdin=subprocess.DEVNULL)
             if not bFromThread:
                 print("Batch script <%d> finished with exit code %s." % (id(self), r))
 
@@ -1210,7 +1251,8 @@ DATACLASSES = {EDataType.DT_Delegate: None,
                EDataType.DT_Variant: NVariant,
                EDataType.DT_Iterable: list,
                EDataType.DT_Bool: bool,
-               EDataType.DT_AttrRef: ByRefVar
+               EDataType.DT_AttrRef: ByRefVar,
+               EDataType.DT_Enum: TEnum
                }
 
 CLASSTYPES = {str: EDataType.DT_String,

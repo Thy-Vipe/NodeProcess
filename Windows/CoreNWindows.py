@@ -113,6 +113,8 @@ class NSpinBox(NWidgetBase, QtWidgets.QSpinBox):
         QtWidgets.QSpinBox.__init__(self, p)
         self.setButtonSymbols(QtWidgets.QSpinBox.NoButtons)
         self.valueChanged.connect(self.onChanged)
+        self.setMinimum(-sys.maxsize-1)
+        self.setMaximum(sys.maxsize)
 
     def onChanged(self, *args, **kwargs):
         self.sg_updated.emit()
@@ -124,6 +126,8 @@ class NDoubleBox(NWidgetBase, QtWidgets.QDoubleSpinBox):
         QtWidgets.QDoubleSpinBox.__init__(self, p)
         self.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
         self.valueChanged.connect(self.onChanged)
+        self.setMinimum(-sys.maxsize - 1)
+        self.setMaximum(sys.maxsize)
 
     def onChanged(self, *args, **kwargs):
         self.sg_updated.emit()
@@ -166,6 +170,27 @@ class NListWidget(NWidgetBase, QtWidgets.QListWidget):
             self.sg_enterPressed.emit(self)
         else:
             super(NListWidget, self).keyPressEvent(event)
+
+
+class NEnumView(NWidgetBase, QtWidgets.QComboBox):
+    ValueChanged = QtCore.Signal(object)
+
+    def __init__(self, p, baseEnum: TEnum):
+        NWidgetBase.__init__(self, p)
+        QtWidgets.QComboBox.__init__(self, p)
+
+        self.enumClass = baseEnum.__class__
+
+        for k, v in baseEnum.items():
+            self.addItem(k)
+
+        self.currentIndexChanged.connect(self._onChanged)
+
+    def _onChanged(self, v):
+        print('changed')
+        text = self.currentText()
+        new = self.enumClass(self.enumClass.from_text(text))
+        self.ValueChanged.emit(new)
 
 
 class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
@@ -228,6 +253,13 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                     tx.setChecked(propInst.get())
                     self._layout.addWidget(tx)
 
+                elif dt == EDataType.DT_Enum:
+                    tx = NEnumView(self)
+                    tx.ValueChanged.connet(propInst.set)
+                    tx.setCurrentIndex(0)
+                    obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                    self._layout.addWidget(obj)
+
                 if updater:
                     tx.sg_updated.connect(updater)
 
@@ -285,6 +317,15 @@ class NPropertiesDialog(NWidgetBase, QtWidgets.QDialog):
                                     tx.setChecked(getter())
                                 tx.setText(prop)
                                 self._layout.addWidget(tx)
+
+                            elif dt == EDataType.DT_Enum:
+                                assert getter
+                                tx = NEnumView(self, getter())
+                                tx.setCurrentIndex(0)
+                                tx.setCurrentText(getter().text())
+                                tx.ValueChanged.connect(propInst)
+                                obj = NPropertyDisplay(self, prop); obj.addItem(tx)
+                                self._layout.addWidget(obj)
 
                             if updater:
                                 tx.sg_updated.connect(updater)
@@ -928,9 +969,14 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
         self.nodeCenter = QtCore.QPointF()
 
         self._createStyle()
-        self._initializeAttrs()
+        if self._wrappedNode:
+            self._initializeAttrs()
 
         print('spawned ui node, base: %s' % baseNode)
+
+    def initializeWith(self, obj: Core.NFunctionBase):
+        assert isinstance(obj, Core.NFunctionBase)
+        self._wrappedNode = obj
 
     def __jsonSerialize__(self, Serial: dict):
         geometry = self.geometry()

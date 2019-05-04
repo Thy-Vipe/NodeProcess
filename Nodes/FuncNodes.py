@@ -1,6 +1,6 @@
 from Nodes.Core import *
 from Nodes.CoreUtils import *
-import shutil, string
+import shutil
 
 
 class Tester(NFunctionBase):
