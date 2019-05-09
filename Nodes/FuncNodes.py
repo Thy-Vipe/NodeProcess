@@ -529,14 +529,73 @@ class FormatString(NFunctionBase):
         self.fmtArgs.clear()
 
 
-class MakeIterable(NFunctionBase):
+class EIterableDataType(TEnum):
+    String = EDataType.DT_String
+    Int = EDataType.DT_Int
+    Float = EDataType.DT_Float
+    Bool = EDataType.DT_Bool
+
+
+class Iterable(NFunctionBase):
     def __init__(self, funcName):
-        super(MakeIterable, self).__init__(funcName, None, EFuncType.FT_Pure)
+        super(Iterable, self).__init__(funcName, None, EFuncType.FT_Pure)
 
         self.iterable = []
 
         NATTR(self, 'iterableRef', EAttrType.AT_ReadOnly)
         self.iterableRef = NDynamicAttr('iterableRef', EDataType.DT_AttrRef, ByRefVar(self, 'iterable'), self, noInput=True)
+
+
+class MakeIterable(Iterable):
+    def __init__(self, funcName):
+        super(MakeIterable, self).__init__(funcName)
+
+        self.dataMode = EIterableDataType(EIterableDataType.Int)
+
+        self._content = []
+        self._idx = 0
+
+        self.iterableRef = NDynamicAttr('iterableRef', EDataType.DT_AttrRef, ByRefVar(self, 'iterable'), self, noInput=True, EvaluationHook=self.refresh)
+
+        NATTR(self, 'addItem', EAttrType.AT_kSlot); NATTR(self, 'removeItem', EAttrType.AT_kSlot)
+        self.registerGetters()
+
+    @Property(EPropType.PT_Input, dataType=EDataType.DT_Enum, pos=2)
+    def Type(self, v):
+        self.dataMode = v
+
+    def _get_Type(self):
+        return self.dataMode
+
+    @Property(EPropType.PT_Internal)
+    def addItem(self):
+        name = "Item_%d" % self._idx
+        t = self.dataMode.value()
+        new = NDynamicAttr(name, t, None, self)
+        NATTR(self, name, EAttrType.AT_Serializable, EAttrType.AT_WriteOnly)
+        setattr(self, name, new)
+        self._content.append((name, t))
+        self.onAttributeChanged.execute(name, EAttrChange.AC_Added, typ=t, mode=1)
+        self.iterable.insert(self._idx, new.get())
+        self._idx += 1
+
+    @Property(EPropType.PT_Internal)
+    def removeItem(self):
+        if self._idx > 0:
+            self._idx -= 1
+            name = self._content[self._idx][0]
+            RNATTR(self, name)
+            delattr(self, name)
+            self._content.pop(self._idx)
+            self.onAttributeChanged.execute(name, EAttrChange.AC_Removed)
+
+    def refresh(self):
+        """
+        Updates all first entries of the iterable when it is called.
+        """
+        values = [getattr(self, x[0]).get() for x in self._content]
+        for i in range(values.__len__()):
+            self.iterable[i] = values[i]
 
 
 @ExposedMethod(EFuncType.FT_Pure, result=str)
@@ -551,6 +610,28 @@ def stringContains(src: str, value: str, caseSensitive: bool = False):
         return src.__contains__(value)
     else:
         return src.lower().__contains__(value.lower())
+
+
+@ExposedMethod(EFuncType.FT_Callable, isContained=bool)
+def stringContainsAny(src: str, items: ByRefVar, caseSensitive: bool = False):
+
+    for item in items.get():
+        v = stringContains(src, str(item), caseSensitive)
+        if v is True:
+            return True
+
+    return False
+
+
+@ExposedMethod(EFuncType.FT_Callable, isContained=bool)
+def stringContainsAll(src: str, items: ByRefVar, caseSensitive: bool = False):
+
+    for item in items.get():
+        v = stringContains(src, str(item), caseSensitive)
+        if v is False:
+            return False
+
+    return True
 
 
 @ExposedMethod(EFuncType.FT_Pure, result=NVariant)

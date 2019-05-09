@@ -1771,21 +1771,24 @@ class PlugItem(SlotItem):
         """
         The bounding rect based on the width and height variables.
         """
-        width = height = self.parentItem().attrHeight / 2.0
+        if self.parentItem():
+            width = height = self.parentItem().attrHeight / 2.0
 
-        if not self.scene():
-            return QtCore.QRect(0,0,0,0)
+            if not self.scene():
+                return QtCore.QRect(0,0,0,0)
 
-        nodzInst = self.scene().views()[0]
-        # config = nodzInst.config
+            nodzInst = self.scene().views()[0]
+            # config = nodzInst.config
 
-        x = self.parentItem().baseWidth - (width / 2.0)
-        y = (self.parentItem().baseHeight - 10 +  # @TODO Add config for radius, currently '10'
-             self.parentItem().attrHeight / 4 +
-             self.parentItem().attrs.index(self.attribute) * self.parentItem().attrHeight)
+            x = self.parentItem().baseWidth - (width / 2.0)
+            y = (self.parentItem().baseHeight - 10 +  # @TODO Add config for radius, currently '10'
+                 self.parentItem().attrHeight / 4 +
+                 self.parentItem().attrs.index(self.attribute) * self.parentItem().attrHeight)
 
-        rect = QtCore.QRectF(QtCore.QRect(x, y, width, height))
-        return rect
+            rect = QtCore.QRectF(QtCore.QRect(x, y, width, height))
+            return rect
+
+        return QtCore.QRectF()
 
     def connect(self, socket_item, connection):
         """
