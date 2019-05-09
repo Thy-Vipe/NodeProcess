@@ -1179,6 +1179,8 @@ class NUiNodeObject(NWidgetBase, QtWidgets.QGraphicsItem):
 
         # Remove node.
         scene = self.scene()
+        g_a.killInstance(self._wrappedNode.getUUID())
+
         scene.removeItem(self)
         scene.update()
 

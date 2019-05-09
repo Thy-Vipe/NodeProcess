@@ -611,3 +611,14 @@ def iterable_Extend(iterable: ByRefVar, other: list):
 @ExposedMethod(EFuncType.FT_Callable)
 def iterable_Clear(iterable: ByRefVar):
     iterable.get().clear()
+
+
+@ExposedMethod(EFuncType.FT_Callable, result=str)
+def convert_Py_to_Mel(scriptPath: str, outFile: str):
+    converterPath = UCoreUtils.parsePath(UCoreUtils.getMainConfig()["UTILS"]["P2MPath"])
+    outFile = outFile.replace('.py', '.mel')
+    subprocess.call("\"%s\" -i %s -o %s" % (converterPath, scriptPath, outFile))
+
+    return outFile
+
+

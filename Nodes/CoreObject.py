@@ -217,3 +217,6 @@ class NObject(object):
 
     def __str__(self):
         return "\"%s\" type <'%s'> with ID %s" % (self.getName(), self.__class__.__name__, self.getUUID())
+
+    def __del__(self):
+        print("Destroying %s" % self)

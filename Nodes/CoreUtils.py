@@ -1,4 +1,4 @@
-import inspect, warnings, json
+import inspect, warnings, json, os
 import global_accessor as ga
 from PySide2 import QtCore
 
@@ -99,3 +99,47 @@ class UCoreUtils:
             data = json.load(f)
 
         return data
+
+    @staticmethod
+    def findIncremental(file_path: str):
+        file_dir, file = file_path.rsplit('\\', 1)
+        files = os.listdir(file_dir)
+
+        separators = file_path.split('.')
+        testFiles = []
+        pattern = UCoreUtils.makePattern(file)
+
+        l_max = 5
+        idx = 0
+        for f in files:
+            if UCoreUtils.makePattern(f) == pattern and f != file:
+                testFiles.append(f)
+                idx += 1
+            if idx >= l_max:
+                break
+
+        for s in separators:
+            if s.isdigit():
+                pos_s, pos_e = (file.find(s[0]), len(s))
+                pos_e += pos_s  # make it absolute
+                bGood = []
+                prev = file
+                for f in testFiles:
+                    bGood.append(int(f[pos_s:pos_e]) > int(prev[pos_s:pos_e]))
+                    prev = f
+                if all(bGood):
+                    return max(len(s), 3)
+
+        return 3
+
+
+
+    @staticmethod
+    def makePattern(file):
+        pattern = file
+        for c in file:
+            if c.isDigit():
+                pattern = pattern.replace(c, '#')
+
+        return pattern
+

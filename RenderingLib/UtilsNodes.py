@@ -47,7 +47,23 @@ class Seemlessman(NFunctionBase):
         for item in self._dynamicAttrs:
             dynamicAttr = getattr(self, item)
             value = dynamicAttr.get()
-            outCmdArgs += " %s" % value
+            if isinstance(value, str):
+                if value == "AUTODETECT" and item.lower() == 'padding':
+                    p = getattr(self, 'filePath')
+                    value = UCoreUtils.findIncremental(p)
+
+            if item.lower() == 'lastframe' and value == -1:
+                adir, f = getattr(self, 'filePath').rsplit('\\', 1)
+                pattern = UCoreUtils.makePattern(f)
+                cnt = 0
+                for x in os.listdir(adir):
+                    if UCoreUtils.makePattern(x) == pattern:
+                        cnt += 1
+
+                value = cnt
+
+            print(value)
+            outCmdArgs += " %s" % str(value)
 
         cmd = self._cmdFmt.format(sm=self._SeemlessmanBinary, flag=self._flagCmd, cmd=outCmdArgs)
         self._batchScript.setCode(cmd)
@@ -68,10 +84,10 @@ class Seemlessman(NFunctionBase):
         self._flagCmd = ''
 
     @Property(EPropType.PT_Input, dataType=EDataType.DT_Enum, pos=2)
-    def Usage(self, val):
+    def Usage(self, val: ESMMode):
         mode = val.value()
         self.clear()
-        with open('%s\\RenderingNodes.NConfig' % self._path, 'r') as f:
+        with open('%s\\RenderingNodes.config' % self._path, 'r') as f:
             data = json.load(f)
 
             self._config = data[self.__class__.__name__][mode]
