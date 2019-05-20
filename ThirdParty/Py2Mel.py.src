@@ -81,7 +81,7 @@ def version():
 
 def python_interpret(data):
     output = "// %s" % version()
-    output += "python(\"%s\");" % stringify(data)
+    output += "python \"%s\";" % stringify(data)
     return output
 
 
