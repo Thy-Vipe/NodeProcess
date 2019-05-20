@@ -1481,9 +1481,6 @@ class NVisualAttribute(NObject):
         Serial['outConnections'] = outConnections
 
 
-
-
-
 class SlotItem(QtWidgets.QGraphicsItem):
 
     """

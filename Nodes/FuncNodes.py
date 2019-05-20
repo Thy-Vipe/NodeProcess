@@ -393,8 +393,8 @@ class MoveToDir(NFunctionBase):
 
     @Property(EPropType.PT_FuncDelegateIn, dataType=EDataType.DT_Delegate, pos=0)
     def execute(self):
-        srcPath = self.src.get().toString()
-        dstPath = self.dst.get().toString()
+        srcPath = self.src.get().toString().replace('/', '\\')
+        dstPath = self.dst.get().toString().replace('/', '\\')
         if not os.path.exists(dstPath) and self._createDir:
             os.mkdir(dstPath)
         elif not os.path.exists(dstPath):
