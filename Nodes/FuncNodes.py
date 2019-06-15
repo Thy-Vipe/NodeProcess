@@ -694,6 +694,11 @@ def iterable_Clear(iterable: ByRefVar):
     iterable.get().clear()
 
 
+@ExposedMethod(EFuncType.FT_Pure, result=NVariant)
+def iterable_Get(iterable: ByRefVar, idx: int):
+    return iterable.get()[idx]
+
+
 @ExposedMethod(EFuncType.FT_Callable, result=str)
 def convert_Py_to_Mel(scriptPath: str, outFile: str):
     converterPath = UCoreUtils.parsePath(UCoreUtils.getMainConfig()["UTILS"]["P2MPath"])
